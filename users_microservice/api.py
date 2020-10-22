@@ -1,11 +1,16 @@
 """API module."""
-from flask_restx import Api, Resource, reqparse, fields
+from flask_restx import Api, Resource, fields
 from users_microservice.models import db, User
 
 api = Api(prefix="/v1")
 
 user_model = api.model(
-    "User", {"nombre": fields.String, "apellido": fields.String, "email": fields.String}
+    "User",
+    {
+        "first_name": fields.String(description='The name'),
+        "last_name": fields.String(description='The last name'),
+        "email": fields.String(description='The email'),
+    },
 )
 
 
@@ -29,17 +34,15 @@ class UserResource(Resource):
         user = User.query.filter(User.id == user_id).first()
         return user
 
-    @api.doc('create_user')
+    @api.doc('create_user', body=user_model, validate=True)
     @api.marshal_with(user_model, envelope='resource')
-    def put(self, user_id):
+    def post(self, user_id):
         """Create a new user."""
-        parser = reqparse.RequestParser()
-        parser.add_argument('nombre', type=str, help='The name of the user')
-        parser.add_argument('apellido', type=str, help='The lastname of the user')
-        parser.add_argument('email', type=str, help='The email of the user')
-        args = parser.parse_args(strict=True)
         new_user = User(
-            id=user_id, nombre=args.nombre, apellido=args.apellido, email=args.email,
+            id=user_id,
+            first_name=api.payload.first_name,
+            last_name=api.payload.last_name,
+            email=api.payload.email,
         )
         db.session.add(new_user)
         db.session.commit()
