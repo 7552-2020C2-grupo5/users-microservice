@@ -1,0 +1,29 @@
+version: '3.7'
+services:
+    postgres:
+        image: postgres:11.9
+        environment:
+          - POSTGRES_USER=users_microservice
+          - POSTGRES_PASSWORD=users_microservice
+          - POSTGRES_DB=users_microservice
+          - PGDATA=/var/lib/postgresql/data/pgdata
+        ports:
+          - 54321:5432
+        volumes:
+          - /var/lib/postgresql/data/pgdata
+        logging:
+            options:
+                max-size: 10m
+                max-file: "3"
+    api:
+      container_name: users_microservice_api
+      depends_on:
+        - postgres
+      build:
+        context: ../
+        dockerfile: Dockerfile
+      ports:
+        - "5000:5000"
+      environment:
+        - DATABASE_URL=postgres://users_microservice:users_microservice@postgres/users_microservice
+      entrypoint: /app/docker-compose/api-entrypoint.sh
