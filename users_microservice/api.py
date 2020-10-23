@@ -37,7 +37,7 @@ class UserListResource(Resource):
         return User.query.all()
 
     @api.doc('create_user')
-    @api.expect(user_model)
+    @api.expect(user_model, validate=True)
     @api.marshal_with(user_model, envelope='resource')
     def post(self):
         """Create a new user."""
