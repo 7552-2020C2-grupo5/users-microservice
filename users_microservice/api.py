@@ -15,7 +15,16 @@ api = Api(
     description="Users microservice for bookbnb",
     default="Users",
     default_label="Users operations",
+    validate=True,
 )
+
+
+@api.errorhandler
+def handle_exception(error: Exception):
+    """When an unhandled exception is raised"""
+    message = "Error: " + getattr(error, 'message', str(error))
+    return {'message': message}, getattr(error, 'code', 500)
+
 
 user_model = api.model(
     "User",
@@ -37,7 +46,7 @@ class UserListResource(Resource):
         return User.query.all()
 
     @api.doc('create_user')
-    @api.expect(user_model, validate=True)
+    @api.expect(user_model)
     @api.marshal_with(user_model, envelope='resource')
     def post(self):
         """Create a new user."""
