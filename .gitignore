@@ -1,5 +1,8 @@
 settings.ini
 
+# IDEs
+.idea/
+
 # gitlab-runner local dirs
 builds/
 

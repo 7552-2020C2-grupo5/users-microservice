@@ -47,7 +47,7 @@ class UserListResource(Resource):
 
     @api.doc('create_user')
     @api.expect(user_model)
-    @api.marshal_with(user_model, envelope='resource')
+    @api.marshal_with(user_model)
     def post(self):
         """Create a new user."""
         new_user = User(**api.payload)
@@ -61,7 +61,7 @@ class UserListResource(Resource):
 @api.response(404, 'User not found')
 class UserResource(Resource):
     @api.doc('get_user')
-    @api.marshal_with(user_model, envelope='resource')
+    @api.marshal_with(user_model)
     def get(self, user_id):
         """Get a user by id."""
         user = User.query.filter(User.id == user_id).first()
