@@ -22,6 +22,9 @@ api = Api(
     validate=True,
 )
 
+parser = api.parser()
+parser.add_argument('Authorization', type=str, location='headers')
+
 
 @api.errorhandler
 def handle_exception(error: Exception):
@@ -67,38 +70,34 @@ class UserTokenValidatorResource(Resource):
     """
 
     @api.doc('validate_user_token')
+    @api.expect(parser, validate=True)
+    @api.response(200, "Success")
+    @api.response(401, "Invalid token")
     def get(self):
-        auth_header = request.headers.get('Authorization')
-        if auth_header:
-            auth_token = auth_header.split(" ")[1]
-        else:
-            auth_token = ''
-
-        fail_msg = {'status': 'fail'}
+        auth_token = request.headers.get('Authorization')
         if auth_token:
             resp = User.decode_auth_token(auth_token)
             if isinstance(resp, int):
                 msg = {'status': 'success'}
                 return Response(json.dumps(msg), status=200, mimetype=MIMETYPE)
-            return Response(json.dumps(fail_msg), status=401, mimetype=MIMETYPE)
-        else:
-            return Response(json.dumps(fail_msg), status=401, mimetype=MIMETYPE)
+        msg = {'status': 'fail'}
+        return Response(json.dumps(msg), status=401, mimetype=MIMETYPE)
 
 
-@api.route('/user')
+@api.route('/profile')
 class UserListResource(Resource):
-    @api.doc('list_user')
+    @api.doc('list_users_profiles')
     @api.marshal_list_with(profile_model)
     def get(self):
         """Get all users."""
         return User.query.all()
 
 
-@api.route('/user/<int:user_id>')
+@api.route('/profile/<int:user_id>')
 @api.param('user_id', 'The user unique identifier')
 @api.response(404, 'User not found')
 class UserResource(Resource):
-    @api.doc('get_user')
+    @api.doc('get_user_profile_by_id')
     @api.marshal_with(profile_model)
     def get(self, user_id):
         """Get a user by id."""
@@ -114,7 +113,10 @@ class RegisterResource(Resource):
     User Registration Resource
     """
 
+    @api.doc('user_register')
     @api.expect(register_model, validate=True)
+    @api.response(201, 'Successfully registered')
+    @api.response(401, 'User already registered')
     def post(self):
         data = request.get_json()
         user = User.query.filter_by(email=data.get('email')).first()
@@ -129,15 +131,13 @@ class RegisterResource(Resource):
                 'message': 'Successfully registered.',
                 'auth_token': auth_token.decode(),
             }
-            msg = json.dumps(resp)
-            return Response(msg, status=201, mimetype='application/json')
+            return Response(json.dumps(resp), status=201, mimetype=MIMETYPE)
         else:
             resp = {
                 'status': 'fail',
                 'message': 'User already exists. Please Log in.',
             }
-            msg = json.dumps(resp)
-            return Response(msg, status=202, mimetype='application/json')
+            return Response(json.dumps(resp), status=401, mimetype=MIMETYPE)
 
 
 @api.route('/login')
@@ -147,6 +147,10 @@ class LoginResource(Resource):
     """
 
     @api.expect(login_model, validate=True)
+    @api.doc('user_login')
+    @api.response(201, "Success")
+    @api.response(401, "Password does not match")
+    @api.response(404, "User does not exist")
     def post(self):
         data = request.get_json()
         user = User.query.filter_by(email=data.get('email')).first()
@@ -159,16 +163,42 @@ class LoginResource(Resource):
                 'auth_token': auth_token.decode(),
             }
             msg = json.dumps(resp)
-            return Response(msg, status=200, mimetype='application/json')
+            return Response(msg, status=201, mimetype=MIMETYPE)
 
         elif user and not bcrypt.check_password_hash(
             user.password, data.get('password')
         ):
             resp = {'status': 'fail', 'message': 'Password does not match.'}
-            msg = json.dumps(resp)
-            return Response(msg, status=202, mimetype='application/json')
+            return Response(json.dumps(resp), status=401, mimetype=MIMETYPE)
 
         else:
             resp = {'status': 'fail', 'message': 'User does not exist.'}
-            msg = json.dumps(resp)
-            return Response(msg, status=202, mimetype='application/json')
+            return Response(json.dumps(resp), status=404, mimetype=MIMETYPE)
+
+
+@api.route('/logout')
+class LogoutAPI(Resource):
+    """
+    User Logout Resource
+    """
+
+    @api.doc('user_logout')
+    @api.expect(parser, validate=True)
+    @api.response(201, "Success")
+    @api.response(401, "Invalid token")
+    def post(self):
+        auth_token = request.headers.get('Authorization')
+        if auth_token:
+            resp = User.decode_auth_token(auth_token)
+            if isinstance(resp, int):
+                # blacklist_token = BlacklistToken(token=auth_token)
+                # db.session.add(blacklist_token)
+                # db.session.commit()
+                resp = {'status': 'success', 'message': 'Successfully logged out.'}
+                return Response(json.dumps(resp), status=201, mimetype=MIMETYPE)
+            else:  # token is not valid
+                resp = {'status': 'fail', 'message': resp}
+                return Response(json.dumps(resp), status=401, mimetype=MIMETYPE)
+        else:
+            resp = {'status': 'fail', 'message': 'Provide a valid auth token.'}
+            return Response(json.dumps(resp), status=401, mimetype=MIMETYPE)
