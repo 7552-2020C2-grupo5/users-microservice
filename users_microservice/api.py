@@ -1,16 +1,17 @@
 """API module."""
-from flask_restx import Api, Resource, fields
-from flask import request, Response
-from users_microservice.models import db, User, bcrypt
+from flask_restx import Api, Resource, fields, abort, marshal
+from users_microservice.models import db, User, BlacklistToken
 from users_microservice import __version__
 import logging
-import json
+import jwt
+from users_microservice.exceptions import (
+    UserDoesNotExist,
+    PasswordDoesNotMatch,
+    EmailAlreadyRegistered,
+)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
-MIMETYPE = "application/json"
-
 
 api = Api(
     prefix="/v1",
@@ -22,35 +23,22 @@ api = Api(
     validate=True,
 )
 
-parser = api.parser()
-parser.add_argument('Authorization', type=str, location='headers')
+auth_parser = api.parser()
+auth_parser.add_argument('Authorization', type=str, location='headers', required=True)
+
+
+@api.errorhandler(UserDoesNotExist)
+def handle_user_does_not_exist(_error: UserDoesNotExist):
+    """Handle missing user errors."""
+    abort(404, "User does not exist")
 
 
 @api.errorhandler
 def handle_exception(error: Exception):
     """When an unhandled exception is raised"""
     message = "Error: " + getattr(error, 'message', str(error))
-    return {'message': message}, getattr(error, 'code', 500)
+    abort(getattr(error, 'code', 500), message)
 
-
-register_model = api.model(
-    "User register model",
-    {
-        "id": fields.Integer(readonly=True, description="The user unique identifier"),
-        "first_name": fields.String(required=True, description='The user first name'),
-        "last_name": fields.String(required=True, description='The user last name'),
-        "email": fields.String(required=True, description='The user email'),
-        "password": fields.String(required=True, description='The user password'),
-    },
-)
-
-login_model = api.model(
-    "User login model",
-    {
-        "email": fields.String(required=True, description='The user email'),
-        "password": fields.String(required=True, description='The user password'),
-    },
-)
 
 profile_model = api.model(
     "User profile model",
@@ -62,29 +50,44 @@ profile_model = api.model(
     },
 )
 
+register_model = api.inherit(
+    "User register model",
+    profile_model,
+    {
+        "password": fields.String(
+            required=True, description='The password for the new user'
+        ),
+    },
+)
 
-@api.route('/validate_token')
-class UserTokenValidatorResource(Resource):
-    """
-    User Token Validator
-    """
+registered_model = api.inherit(
+    "User register model",
+    profile_model,
+    {
+        "token": fields.String(
+            required=True, attribute='password', description='The jwt'
+        ),
+    },
+)
 
-    @api.doc('validate_user_token')
-    @api.expect(parser, validate=True)
-    @api.response(200, "Success")
-    @api.response(401, "Invalid token")
-    def get(self):
-        auth_token = request.headers.get('Authorization')
-        if auth_token:
-            resp = User.decode_auth_token(auth_token)
-            if isinstance(resp, int):
-                msg = {'status': 'success'}
-                return Response(json.dumps(msg), status=200, mimetype=MIMETYPE)
-        msg = {'status': 'fail'}
-        return Response(json.dumps(msg), status=401, mimetype=MIMETYPE)
+login_model = api.model(
+    "User login model",
+    {
+        "email": fields.String(required=True, description='The user email'),
+        "password": fields.String(required=True, description='The user password'),
+    },
+)
 
 
-@api.route('/profile')
+class DecodedToken(fields.Raw):
+    def format(self, token):  # pylint: disable=arguments-differ
+        return token.decode()
+
+
+decoded_token_model = api.model("Logged in User model", {"token": DecodedToken()})
+
+
+@api.route('/user')
 class UserListResource(Resource):
     @api.doc('list_users_profiles')
     @api.marshal_list_with(profile_model)
@@ -92,8 +95,23 @@ class UserListResource(Resource):
         """Get all users."""
         return User.query.all()
 
+    @api.doc('user_register')
+    @api.expect(register_model, validate=True)
+    @api.response(201, 'Successfully registered')
+    @api.response(409, 'User already registered')
+    @api.marshal_list_with(registered_model)
+    def post(self):
+        try:
+            new_user = User(**api.payload)
+            db.session.add(new_user)
+            db.session.commit()
 
-@api.route('/profile/<int:user_id>')
+            return new_user
+        except EmailAlreadyRegistered:
+            abort(409, "The email has already been registered.")
+
+
+@api.route('/user/<int:user_id>')
 @api.param('user_id', 'The user unique identifier')
 @api.response(404, 'User not found')
 class UserResource(Resource):
@@ -101,104 +119,61 @@ class UserResource(Resource):
     @api.marshal_with(profile_model)
     def get(self, user_id):
         """Get a user by id."""
-        user = User.query.filter(User.id == user_id).first()
-        if not user:
-            return None, 404
-        return user
+        return User.query.filter(User.id == user_id).first()
 
 
-@api.route('/register')
-class RegisterResource(Resource):
-    """
-    User Registration Resource
-    """
+@api.route('/validate_token')
+class UserTokenValidatorResource(Resource):
+    """User Token Validator"""
 
-    @api.doc('user_register')
-    @api.expect(register_model, validate=True)
-    @api.response(201, 'Successfully registered')
-    @api.response(401, 'User already registered')
-    def post(self):
-        data = request.get_json()
-        user = User.query.filter_by(email=data.get('email')).first()
-        if not user:
-            user = User(**api.payload)
-            db.session.add(user)
-            db.session.commit()
-
-            auth_token = user.encode_auth_token(user.id)
-            resp = {
-                'status': 'success',
-                'message': 'Successfully registered.',
-                'auth_token': auth_token.decode(),
-            }
-            return Response(json.dumps(resp), status=201, mimetype=MIMETYPE)
-        else:
-            resp = {
-                'status': 'fail',
-                'message': 'User already exists. Please Log in.',
-            }
-            return Response(json.dumps(resp), status=401, mimetype=MIMETYPE)
+    @api.doc('validate_user_token')
+    @api.expect(auth_parser)
+    @api.response(200, "Success")
+    @api.response(401, "Invalid token")
+    def get(self):
+        parser_args = auth_parser.parser_args()
+        auth_token = parser_args.Authorization
+        try:
+            User.decode_auth_token(auth_token)
+            return {"status": "success"}, 200
+        except (jwt.ExpiredSignatureError, jwt.InvalidSignatureError) as e:
+            return abort(401, str(e))
 
 
 @api.route('/login')
 class LoginResource(Resource):
-    """
-    User Login Resource
-    """
+    """User Login Resource"""
 
-    @api.expect(login_model, validate=True)
+    @api.expect(login_model)
     @api.doc('user_login')
     @api.response(201, "Success")
     @api.response(401, "Password does not match")
     @api.response(404, "User does not exist")
     def post(self):
-        data = request.get_json()
-        user = User.query.filter_by(email=data.get('email')).first()
-
-        if user and bcrypt.check_password_hash(user.password, data.get('password')):
-            auth_token = user.encode_auth_token(user.id)
-            resp = {
-                'status': 'success',
-                'message': 'Successfully logged in.',
-                'auth_token': auth_token.decode(),
-            }
-            msg = json.dumps(resp)
-            return Response(msg, status=201, mimetype=MIMETYPE)
-
-        elif user and not bcrypt.check_password_hash(
-            user.password, data.get('password')
-        ):
-            resp = {'status': 'fail', 'message': 'Password does not match.'}
-            return Response(json.dumps(resp), status=401, mimetype=MIMETYPE)
-
-        else:
-            resp = {'status': 'fail', 'message': 'User does not exist.'}
-            return Response(json.dumps(resp), status=404, mimetype=MIMETYPE)
+        try:
+            return marshal(User.check_password(**api.payload), decoded_token_model), 201
+        except PasswordDoesNotMatch:
+            abort(401, "Password does not match.")
 
 
 @api.route('/logout')
 class LogoutAPI(Resource):
-    """
-    User Logout Resource
-    """
+    """User Logout Resource."""
 
     @api.doc('user_logout')
-    @api.expect(parser, validate=True)
+    @api.expect(auth_parser, validate=True)
     @api.response(201, "Success")
     @api.response(401, "Invalid token")
     def post(self):
-        auth_token = request.headers.get('Authorization')
-        if auth_token:
-            resp = User.decode_auth_token(auth_token)
-            if isinstance(resp, int):
-                # blacklist_token = BlacklistToken(token=auth_token)
-                # db.session.add(blacklist_token)
-                # db.session.commit()
-                resp = {'status': 'success', 'message': 'Successfully logged out.'}
-                return Response(json.dumps(resp), status=201, mimetype=MIMETYPE)
-            else:  # token is not valid
-                resp = {'status': 'fail', 'message': resp}
-                return Response(json.dumps(resp), status=401, mimetype=MIMETYPE)
-        else:
-            resp = {'status': 'fail', 'message': 'Provide a valid auth token.'}
-            return Response(json.dumps(resp), status=401, mimetype=MIMETYPE)
+        parser_args = auth_parser.parse_args()
+        auth_token = parser_args.Authorization
+        try:
+            User.decode_auth_token(auth_token)
+            blacklist_token = BlacklistToken(token=auth_token)
+            db.session.add(blacklist_token)
+            db.session.commit()
+            return {'status': 'success', 'message': 'Successfully logged out.'}, 201
+        except jwt.ExpiredSignatureError:
+            abort(401, "Signature expired. Please log in again.")
+        except jwt.InvalidTokenError:
+            abort(401, "Invalid token. Please log in again.")
