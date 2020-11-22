@@ -57,7 +57,8 @@ class User(db.Model):  # type:ignore
     @property
     def jwt(self):
         payload = {
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=120),
+            'exp': datetime.datetime.utcnow()
+            + datetime.timedelta(seconds=config.jwt_expiration(cast=int)),
             'iat': datetime.datetime.utcnow(),
             'sub': self.id,
         }
