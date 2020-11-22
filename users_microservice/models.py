@@ -50,7 +50,7 @@ class User(db.Model):  # type:ignore
         user = User.query.filter_by(email=email).first()
         if user is None:
             raise UserDoesNotExist
-        if user.verify_password(plaintext):
+        if not user.verify_password(plaintext):
             raise PasswordDoesNotMatch
         return user.jwt
 
