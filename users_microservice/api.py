@@ -119,7 +119,10 @@ class UserResource(Resource):
     @api.marshal_with(profile_model)
     def get(self, user_id):
         """Get a user by id."""
-        return User.query.filter(User.id == user_id).first()
+        user = User.query.filter(User.id == user_id).first()
+        if user is None:
+            raise UserDoesNotExist
+        return user
 
 
 @api.route('/validate_token')
