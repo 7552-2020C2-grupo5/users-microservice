@@ -4,7 +4,7 @@ from sqlalchemy_utils.types.email import EmailType
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import validates
 from users_microservice.cfg import config
-from users_microservice.constants import DEFAULT_SECRET_KEY
+from users_microservice.constants import DEFAULT_SECRET_KEY, DEFAULT_JWT_EXPIRATION
 from users_microservice.exceptions import (
     UserDoesNotExist,
     PasswordDoesNotMatch,
@@ -58,7 +58,9 @@ class User(db.Model):  # type:ignore
     def jwt(self):
         payload = {
             'exp': datetime.datetime.utcnow()
-            + datetime.timedelta(seconds=config.jwt_expiration(cast=int)),
+            + datetime.timedelta(
+                seconds=config.jwt_expiration(cast=int, default=DEFAULT_JWT_EXPIRATION)
+            ),
             'iat': datetime.datetime.utcnow(),
             'sub': self.id,
         }
