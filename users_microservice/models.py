@@ -43,14 +43,14 @@ class User(db.Model):  # type:ignore
         return email_address
 
     def verify_password(self, plaintext):
-        return bcrypt.check_password_hash(self.password, plaintext)
+        return bcrypt.check_password_hash(self._password.encode(), plaintext)
 
     @staticmethod
-    def check_password(email, plaintext):
+    def check_password(email, password):
         user = User.query.filter_by(email=email).first()
         if user is None:
             raise UserDoesNotExist
-        if not user.verify_password(plaintext):
+        if not user.verify_password(password):
             raise PasswordDoesNotMatch
         return user.jwt
 
@@ -66,7 +66,7 @@ class User(db.Model):  # type:ignore
         }
         return jwt.encode(
             payload, config.secret_key(default=DEFAULT_SECRET_KEY), algorithm='HS256'
-        ).decode()
+        )
 
     @staticmethod
     def decode_auth_token(auth_token) -> int:
@@ -84,6 +84,7 @@ class User(db.Model):  # type:ignore
         ------
         jwt.ExpiredSignatureError
         jwt.InvalidTokenError
+        jwt.DecodeError
         """
         if BlacklistToken.check_blacklist(auth_token):
             raise jwt.InvalidTokenError

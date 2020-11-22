@@ -61,7 +61,7 @@ register_model = api.inherit(
 )
 
 registered_model = api.inherit(
-    "User register model",
+    "New user model",
     profile_model,
     {
         "token": fields.String(
@@ -133,13 +133,16 @@ class UserTokenValidatorResource(Resource):
     @api.expect(auth_parser)
     @api.response(200, "Success")
     @api.response(401, "Invalid token")
+    @api.response(400, "Malformed token")
     def get(self):
-        parser_args = auth_parser.parser_args()
+        parser_args = auth_parser.parse_args()
         auth_token = parser_args.Authorization
         try:
             User.decode_auth_token(auth_token)
             return {"status": "success"}, 200
-        except (jwt.ExpiredSignatureError, jwt.InvalidSignatureError) as e:
+        except jwt.DecodeError:
+            return abort(400, "The token sent was malformed.")
+        except (jwt.ExpiredSignatureError, jwt.InvalidTokenError,) as e:
             return abort(401, str(e))
 
 
@@ -154,7 +157,12 @@ class LoginResource(Resource):
     @api.response(404, "User does not exist")
     def post(self):
         try:
-            return marshal(User.check_password(**api.payload), decoded_token_model), 201
+            return (
+                marshal(
+                    {"token": User.check_password(**api.payload)}, decoded_token_model
+                ),
+                201,
+            )
         except PasswordDoesNotMatch:
             abort(401, "Password does not match.")
 
