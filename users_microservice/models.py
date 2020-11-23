@@ -66,7 +66,7 @@ class User(db.Model):  # type:ignore
         }
         return jwt.encode(
             payload, config.secret_key(default=DEFAULT_SECRET_KEY), algorithm='HS256'
-        )
+        ).decode()
 
     @staticmethod
     def decode_auth_token(auth_token) -> int:

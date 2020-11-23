@@ -78,13 +78,7 @@ login_model = api.model(
     },
 )
 
-
-class DecodedToken(fields.Raw):
-    def format(self, token):  # pylint: disable=arguments-differ
-        return token.decode()
-
-
-decoded_token_model = api.model("Logged in User model", {"token": DecodedToken()})
+decoded_token_model = api.model("Logged in User model", {"token": fields.String})
 
 
 @api.route('/user')
