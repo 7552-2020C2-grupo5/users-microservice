@@ -1,5 +1,5 @@
 """API module."""
-from flask_restx import Api, Resource, fields, abort, marshal
+from flask_restx import Api, Resource, fields, marshal
 from users_microservice.models import db, User, BlacklistToken
 from users_microservice import __version__
 import logging
@@ -30,14 +30,14 @@ auth_parser.add_argument('Authorization', type=str, location='headers', required
 @api.errorhandler(UserDoesNotExist)
 def handle_user_does_not_exist(_error: UserDoesNotExist):
     """Handle missing user errors."""
-    abort(404, "User does not exist")
+    return {"message": "User does not exist"}, 401
 
 
 @api.errorhandler
 def handle_exception(error: Exception):
     """When an unhandled exception is raised"""
-    message = "Error: " + getattr(error, 'message', str(error))
-    abort(getattr(error, 'code', 500), message)
+    message = f"Error: {getattr(error, 'message', str(error))}"
+    return {"message": message}, getattr(error, 'code', 500)
 
 
 profile_model = api.model(
@@ -102,7 +102,7 @@ class UserListResource(Resource):
 
             return new_user
         except EmailAlreadyRegistered:
-            abort(409, "The email has already been registered.")
+            return {"message": "The email has already been registered."}, 409
 
 
 @api.route('/user/<int:user_id>')
@@ -135,9 +135,9 @@ class UserTokenValidatorResource(Resource):
             User.decode_auth_token(auth_token)
             return {"status": "success"}, 200
         except jwt.DecodeError:
-            return abort(400, "The token sent was malformed.")
+            return {"message": "The token sent was malformed."}, 400
         except (jwt.ExpiredSignatureError, jwt.InvalidTokenError,) as e:
-            return abort(401, str(e))
+            return {"message": str(e)}, 401
 
 
 @api.route('/login')
@@ -147,8 +147,7 @@ class LoginResource(Resource):
     @api.expect(login_model)
     @api.doc('user_login')
     @api.response(201, "Success")
-    @api.response(401, "Password does not match")
-    @api.response(404, "User does not exist")
+    @api.response(401, "Invalid credentials")
     def post(self):
         try:
             return (
@@ -158,7 +157,7 @@ class LoginResource(Resource):
                 201,
             )
         except PasswordDoesNotMatch:
-            abort(401, "Password does not match.")
+            return {"message": "Password does not match."}, 402
 
 
 @api.route('/logout')
@@ -179,6 +178,6 @@ class LogoutAPI(Resource):
             db.session.commit()
             return {'status': 'success', 'message': 'Successfully logged out.'}, 201
         except jwt.ExpiredSignatureError:
-            abort(401, "Signature expired. Please log in again.")
+            return {"message": "Signature expired. Please log in again."}, 401
         except jwt.InvalidTokenError:
-            abort(401, "Invalid token. Please log in again.")
+            return {"message": "Invalid token. Please log in again."}, 401
