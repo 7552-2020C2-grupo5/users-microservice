@@ -7,7 +7,7 @@ from flask_cors import CORS
 
 from users_microservice.api import api
 from users_microservice.cfg import config
-from users_microservice.models import db
+from users_microservice.models import db, bcrypt
 
 from werkzeug.middleware.proxy_fix import ProxyFix
 
@@ -33,6 +33,7 @@ def create_app():
     new_app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     db.init_app(new_app)
     api.init_app(new_app)
+    bcrypt.init_app(new_app)
     Migrate(new_app, db, directory=Path(__file__).parent / "migrations")
     new_app.wsgi_app = ProxyFix(
         new_app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1
