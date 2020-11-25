@@ -91,16 +91,15 @@ class UserListResource(Resource):
 
     @api.doc('user_register')
     @api.expect(register_model, validate=True)
-    @api.response(201, 'Successfully registered')
+    @api.response(201, 'Successfully registered', model=registered_model)
     @api.response(409, 'User already registered')
-    @api.marshal_list_with(registered_model)
     def post(self):
         try:
             new_user = User(**api.payload)
             db.session.add(new_user)
             db.session.commit()
 
-            return new_user
+            return api.marhsal(new_user, registered_model), 201
         except EmailAlreadyRegistered:
             return {"message": "The email has already been registered."}, 409
 
