@@ -81,7 +81,7 @@ login_model = api.model(
 decoded_token_model = api.model("Logged in User model", {"token": fields.String})
 
 
-@api.route('/user')
+@api.route('/users')
 class UserListResource(Resource):
     @api.doc('list_users_profiles')
     @api.marshal_list_with(profile_model)
@@ -104,7 +104,7 @@ class UserListResource(Resource):
             return {"message": "The email has already been registered."}, 409
 
 
-@api.route('/user/<int:user_id>')
+@api.route('/users/<int:user_id>')
 @api.param('user_id', 'The user unique identifier')
 @api.response(404, 'User not found')
 class UserResource(Resource):
