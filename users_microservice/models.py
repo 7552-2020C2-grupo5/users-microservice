@@ -27,6 +27,7 @@ class User(db.Model):  # type:ignore
     last_name = db.Column(db.String, nullable=False)
     _password = db.Column(db.String, nullable=False)
     email = db.Column(EmailType, unique=True, nullable=False)
+    register_date = db.Column(db.DateTime, nullable=False, default=func.now())
 
     @hybrid_property
     def password(self):
