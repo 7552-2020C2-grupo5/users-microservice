@@ -1,5 +1,5 @@
 """API module."""
-from flask_restx import Api, Resource, fields, marshal
+from flask_restx import Api, Resource, fields, marshal, Model
 from users_microservice.models import db, User, BlacklistToken
 from users_microservice import __version__
 import logging
@@ -40,8 +40,8 @@ def handle_exception(error: Exception):
     return {"message": message}, getattr(error, 'code', 500)
 
 
-profile_model = api.model(
-    "User profile model",
+base_user_model = Model(
+    "User base model",
     {
         "id": fields.Integer(readonly=True, description="The user unique identifier"),
         "first_name": fields.String(required=True, description='The user first name'),
@@ -50,25 +50,37 @@ profile_model = api.model(
     },
 )
 
-register_model = api.inherit(
+profile_model = base_user_model.clone(
+    "User profile model",
+    {"register_date": fields.DateTime(description='The date the user joined bookbnb')},
+)
+api.models[profile_model.name] = profile_model
+
+
+register_model = base_user_model.clone(
     "User register model",
-    profile_model,
     {
         "password": fields.String(
             required=True, description='The password for the new user'
         ),
     },
 )
+api.models[register_model.name] = register_model
 
-registered_model = api.inherit(
+
+registered_model = base_user_model.clone(
     "New user model",
-    profile_model,
     {
         "token": fields.String(
             required=True, attribute='password', description='The jwt'
         ),
+        "register_date": fields.DateTime(
+            description='The date the user joined bookbnb'
+        ),
     },
 )
+api.models[registered_model.name] = registered_model
+
 
 login_model = api.model(
     "User login model",
@@ -99,7 +111,7 @@ class UserListResource(Resource):
             db.session.add(new_user)
             db.session.commit()
 
-            return api.marhsal(new_user, registered_model), 201
+            return api.marshal(new_user, registered_model), 201
         except EmailAlreadyRegistered:
             return {"message": "The email has already been registered."}, 409
 
