@@ -30,7 +30,7 @@ auth_parser.add_argument('Authorization', type=str, location='headers', required
 @api.errorhandler(UserDoesNotExist)
 def handle_user_does_not_exist(_error: UserDoesNotExist):
     """Handle missing user errors."""
-    return {"message": "User does not exist"}, 401
+    return {"message": "User does not exist"}, 404
 
 
 @api.errorhandler
@@ -102,7 +102,7 @@ class UserListResource(Resource):
         return User.query.all()
 
     @api.doc('user_register')
-    @api.expect(register_model, validate=True)
+    @api.expect(register_model)
     @api.response(201, 'Successfully registered', model=registered_model)
     @api.response(409, 'User already registered')
     def post(self):
@@ -127,6 +127,18 @@ class UserResource(Resource):
         user = User.query.filter(User.id == user_id).first()
         if user is None:
             raise UserDoesNotExist
+        return user
+
+    @api.expect(register_model)
+    @api.marshal_with(registered_model)
+    def put(self, user_id):
+        """Replace a user by id."""
+        user = User.query.filter(User.id == user_id).first()
+        if user is None:
+            raise UserDoesNotExist
+        user.update_from_dict(**api.payload)
+        db.session.merge(user)
+        db.session.commit()
         return user
 
 
@@ -176,7 +188,7 @@ class LogoutAPI(Resource):
     """User Logout Resource."""
 
     @api.doc('user_logout')
-    @api.expect(auth_parser, validate=True)
+    @api.expect(auth_parser)
     @api.response(201, "Success")
     @api.response(401, "Invalid token")
     def post(self):

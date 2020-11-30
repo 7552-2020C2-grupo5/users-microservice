@@ -39,7 +39,8 @@ class User(db.Model):  # type:ignore
 
     @validates("email")
     def validate_email(self, _key, email_address):
-        if User.query.filter(User.email == email_address).first() is not None:
+        user = User.query.filter(User.email == email_address).first()
+        if user is not None and user.id != self.id:
             raise EmailAlreadyRegistered
         return email_address
 
@@ -92,6 +93,10 @@ class User(db.Model):  # type:ignore
         return jwt.decode(auth_token, config.secret_key(default=DEFAULT_SECRET_KEY))[
             'sub'
         ]
+
+    def update_from_dict(self, **kwargs):
+        for field, value in kwargs.items():
+            setattr(self, field, value)
 
 
 class BlacklistToken(db.Model):  # type:ignore
