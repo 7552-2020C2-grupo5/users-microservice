@@ -46,6 +46,9 @@ base_user_model = Model(
         "id": fields.Integer(readonly=True, description="The user unique identifier"),
         "first_name": fields.String(required=True, description='The user first name'),
         "last_name": fields.String(required=True, description='The user last name'),
+        "profile_picture": fields.String(
+            required=False, description="URL pointing to the user's profile picture"
+        ),
         "email": fields.String(required=True, description='The user email'),
     },
 )
