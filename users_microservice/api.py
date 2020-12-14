@@ -53,7 +53,7 @@ base_user_model = Model(
     },
 )
 
-edit_model = Model(
+edit_model = api.model(
     "User edit model",
     {
         "first_name": fields.String(required=False, description='The user first name'),
