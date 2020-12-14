@@ -54,7 +54,7 @@ def pyreverse(session):
     session.run("poetry", "install")
 
     # TODO: create smaller diagrams with portions of the project.
-    session.run("poetry", "run", "pyreverse", "users-microservice", "-o", "png")
+    session.run("poetry", "run", "pyreverse", "users_microservice", "-o", "png")
 
     session.run(
         "mv", "packages.png", "docs/images/packages_dependencies.png", external=True
