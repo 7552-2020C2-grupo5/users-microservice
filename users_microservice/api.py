@@ -53,6 +53,18 @@ base_user_model = Model(
     },
 )
 
+edit_model = api.model(
+    "User edit model",
+    {
+        "first_name": fields.String(required=False, description='The user first name'),
+        "last_name": fields.String(required=False, description='The user last name'),
+        "profile_picture": fields.String(
+            required=False, description="URL pointing to the user's profile picture"
+        ),
+        "email": fields.String(required=False, description='The user email'),
+    },
+)
+
 profile_model = base_user_model.clone(
     "User profile model",
     {"register_date": fields.DateTime(description='The date the user joined bookbnb')},
@@ -71,15 +83,12 @@ register_model = base_user_model.clone(
 api.models[register_model.name] = register_model
 
 
-registered_model = base_user_model.clone(
+registered_model = profile_model.clone(
     "New user model",
     {
         "token": fields.String(
             required=True, attribute='password', description='The jwt'
-        ),
-        "register_date": fields.DateTime(
-            description='The date the user joined bookbnb'
-        ),
+        )
     },
 )
 api.models[registered_model.name] = registered_model
@@ -132,7 +141,7 @@ class UserResource(Resource):
             raise UserDoesNotExist
         return user
 
-    @api.expect(register_model)
+    @api.expect(edit_model)
     @api.marshal_with(registered_model)
     def put(self, user_id):
         """Replace a user by id."""
