@@ -1,19 +1,21 @@
 """SQLAlchemy models."""
+import datetime
+
+import jwt
+from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy_utils.types.email import EmailType
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import validates
-from users_microservice.cfg import config
-from users_microservice.constants import DEFAULT_SECRET_KEY, DEFAULT_JWT_EXPIRATION
-from users_microservice.exceptions import (
-    UserDoesNotExist,
-    PasswordDoesNotMatch,
-    EmailAlreadyRegistered,
-)
-from flask_bcrypt import Bcrypt
-import datetime
-import jwt
 from sqlalchemy.sql import func
+from sqlalchemy_utils.types.email import EmailType
+
+from users_microservice.cfg import config
+from users_microservice.constants import DEFAULT_JWT_EXPIRATION, DEFAULT_SECRET_KEY
+from users_microservice.exceptions import (
+    EmailAlreadyRegistered,
+    PasswordDoesNotMatch,
+    UserDoesNotExist,
+)
 
 db = SQLAlchemy()
 bcrypt = Bcrypt()

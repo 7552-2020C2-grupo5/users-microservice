@@ -1,14 +1,16 @@
 """API module."""
-from flask_restx import Api, Resource, fields, marshal, Model
-from users_microservice.models import db, User, BlacklistToken
-from users_microservice import __version__
 import logging
+
 import jwt
+from flask_restx import Api, Model, Resource, fields, marshal
+
+from users_microservice import __version__
 from users_microservice.exceptions import (
-    UserDoesNotExist,
-    PasswordDoesNotMatch,
     EmailAlreadyRegistered,
+    PasswordDoesNotMatch,
+    UserDoesNotExist,
 )
+from users_microservice.models import BlacklistToken, User, db
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
