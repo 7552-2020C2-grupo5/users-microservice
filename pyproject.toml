@@ -26,6 +26,7 @@ SQLAlchemy-Utils = "^0.36.8"
 Flask-Cors = "^3.0.9"
 Flask-Bcrypt = "^0.7.1"
 PyJWT = "^1.7.1"
+isort = "^5.6.4"
 
 [tool.poetry.dev-dependencies]
 nox = "^2020.8.22"
