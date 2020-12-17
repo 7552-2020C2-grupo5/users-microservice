@@ -7,6 +7,7 @@ repos:
       language: system
       types: [python]
       stages: [commit]
+      exclude: users_microservice/migrations|docs
     - id: black
       name: black
       entry: poetry run black
