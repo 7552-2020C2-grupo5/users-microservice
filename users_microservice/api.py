@@ -194,7 +194,7 @@ class LoginResource(Resource):
                 201,
             )
         except PasswordDoesNotMatch:
-            return {"message": "Password does not match."}, 402
+            return {"message": "Password does not match."}, 401
 
 
 @api.route('/logout')
