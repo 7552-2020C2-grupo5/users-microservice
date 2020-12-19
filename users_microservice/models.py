@@ -21,8 +21,10 @@ db = SQLAlchemy()
 bcrypt = Bcrypt()
 
 
-class User(db.Model):  # type:ignore
-    """User model."""
+class BaseUser(db.Model):  # type:ignore
+    """Base User model."""
+
+    __abstract__ = True
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     first_name = db.Column(db.String, nullable=False)
@@ -30,8 +32,6 @@ class User(db.Model):  # type:ignore
     _password = db.Column(db.String, nullable=False)
     email = db.Column(EmailType, unique=True, nullable=False)
     register_date = db.Column(db.DateTime, nullable=False, default=func.now())
-    # TODO: validate URL
-    profile_picture = db.Column(db.String, nullable=True)
 
     @hybrid_property
     def password(self):
@@ -101,6 +101,27 @@ class User(db.Model):  # type:ignore
     def update_from_dict(self, **kwargs):
         for field, value in kwargs.items():
             setattr(self, field, value)
+
+
+class User(BaseUser):  # type:ignore
+    """User model."""
+
+    # TODO: validate URLs
+    profile_picture = db.Column(db.String, nullable=True)
+
+
+class AdminUser(BaseUser):  # type:ignore
+    """Admin user model."""
+
+    @property
+    def jwt(self):
+        payload = {
+            'iat': datetime.datetime.utcnow(),
+            'sub': self.id,
+        }
+        return jwt.encode(
+            payload, config.secret_key(default=DEFAULT_SECRET_KEY), algorithm='HS256'
+        ).decode()
 
 
 class BlacklistToken(db.Model):  # type:ignore
