@@ -124,7 +124,7 @@ class UserResource(Resource):
         return user
 
     @api.expect(edit_model)
-    @api.marshal_with(registered_model)
+    @api.marshal_with(profile_model)
     def put(self, user_id):
         """Replace a user by id."""
         user = User.query.filter(User.id == user_id).first()
@@ -174,7 +174,7 @@ class LoginResource(Resource):
                 201,
             )
         except PasswordDoesNotMatch:
-            return {"message": "Password does not match."}, 402
+            return {"message": "Password does not match."}, 401
 
 
 @api.route('/logout')

@@ -118,7 +118,7 @@ class AdminUserResource(Resource):
         return user
 
     @api.expect(edit_model)
-    @api.marshal_with(registered_model)
+    @api.marshal_with(profile_model)
     def put(self, user_id):
         """Replace an admin user by id."""
         user = AdminUser.query.filter(AdminUser.id == user_id).first()
