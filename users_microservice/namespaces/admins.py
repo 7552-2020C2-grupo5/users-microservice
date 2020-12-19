@@ -86,13 +86,13 @@ class AdminUserListResource(Resource):
     @api.doc('list_admin_users_profiles')
     @api.marshal_list_with(profile_model)
     def get(self):
-        """Get all users."""
+        """Get all admin users."""
         return AdminUser.query.all()
 
-    @api.doc('admins_user_register')
+    @api.doc('admin_user_register')
     @api.expect(register_model)
     @api.response(201, 'Successfully registered', model=registered_model)
-    @api.response(409, 'User already registered')
+    @api.response(409, 'Admin user already registered')
     def post(self):
         try:
             new_user = AdminUser(**api.payload)
@@ -105,8 +105,8 @@ class AdminUserListResource(Resource):
 
 
 @api.route('/<int:user_id>')
-@api.param('user_id', 'The user unique identifier')
-@api.response(404, 'Admin User not found')
+@api.param('user_id', 'The admin user unique identifier')
+@api.response(404, 'Admin user not found')
 class AdminUserResource(Resource):
     @api.doc('get_admin_user_profile')
     @api.marshal_with(profile_model)
