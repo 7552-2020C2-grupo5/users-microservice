@@ -9,6 +9,8 @@ from alembic import op
 import sqlalchemy as sa
 import sqlalchemy_utils
 
+from users_microservice.models import AdminUser
+
 # revision identifiers, used by Alembic.
 revision = 'e792232e04c7'
 down_revision = '8acb735fe1c7'
@@ -31,6 +33,19 @@ def upgrade():
         sa.PrimaryKeyConstraint('id'),
         sa.UniqueConstraint('email'),
     )
+
+    bind = op.get_bind()
+    session = sa.orm.Session(bind=bind)
+
+    session.add(
+        AdminUser(
+            first_name="Admin",
+            last_name="BookBNB",
+            password="admin_bookbnb",
+            email="admin@bookbnb.com",
+        )
+    )
+    session.commit()
     # ### end Alembic commands ###
 
 
