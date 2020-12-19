@@ -3,6 +3,7 @@
 from flask_restx import Api
 
 from users_microservice import __version__
+from users_microservice.namespaces.admins import api as admins_namespace
 from users_microservice.namespaces.users import api as users_namespace
 
 api = Api(
@@ -15,6 +16,7 @@ api = Api(
     validate=True,
 )
 api.add_namespace(users_namespace, path='/users')
+api.add_namespace(admins_namespace, path='/admins')
 
 
 @api.errorhandler

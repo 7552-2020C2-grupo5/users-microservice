@@ -1,4 +1,4 @@
-"""Users namespace module."""
+"""Admin users namespace module."""
 import jwt
 from flask_restx import Model, Namespace, Resource, fields, marshal
 
@@ -8,9 +8,9 @@ from users_microservice.exceptions import (
     PasswordDoesNotMatch,
     UserDoesNotExist,
 )
-from users_microservice.models import BlacklistToken, User, db
+from users_microservice.models import AdminUser, BlacklistToken, db
 
-api = Namespace("Users", description="Users operations",)
+api = Namespace("Admin Users", description="Admin Users operations",)
 
 auth_parser = api.parser()
 auth_parser.add_argument('Authorization', type=str, location='headers', required=True)
@@ -23,39 +23,33 @@ def handle_user_does_not_exist(_error: UserDoesNotExist):
 
 
 base_user_model = Model(
-    "User base model",
+    "Admin User base model",
     {
         "id": fields.Integer(readonly=True, description="The user unique identifier"),
         "first_name": fields.String(required=True, description='The user first name'),
         "last_name": fields.String(required=True, description='The user last name'),
-        "profile_picture": fields.String(
-            required=False, description="URL pointing to the user's profile picture"
-        ),
         "email": fields.String(required=True, description='The user email'),
     },
 )
 
 edit_model = api.model(
-    "User edit model",
+    "Admin user edit model",
     {
         "first_name": fields.String(required=False, description='The user first name'),
         "last_name": fields.String(required=False, description='The user last name'),
-        "profile_picture": fields.String(
-            required=False, description="URL pointing to the user's profile picture"
-        ),
         "email": fields.String(required=False, description='The user email'),
     },
 )
 
 profile_model = base_user_model.clone(
-    "User profile model",
+    "Admin user profile model",
     {"register_date": fields.DateTime(description='The date the user joined bookbnb')},
 )
 api.models[profile_model.name] = profile_model
 
 
 register_model = base_user_model.clone(
-    "User register model",
+    "Admin user register model",
     {
         "password": fields.String(
             required=True, description='The password for the new user'
@@ -66,7 +60,7 @@ api.models[register_model.name] = register_model
 
 
 registered_model = profile_model.clone(
-    "New user model",
+    "New admin user model",
     {
         "token": fields.String(
             required=True, attribute='password', description='The jwt'
@@ -88,20 +82,20 @@ decoded_token_model = api.model("Logged in User model", {"token": fields.String}
 
 
 @api.route('')
-class UserListResource(Resource):
-    @api.doc('list_users_profiles')
+class AdminUserListResource(Resource):
+    @api.doc('list_admin_users_profiles')
     @api.marshal_list_with(profile_model)
     def get(self):
         """Get all users."""
-        return User.query.all()
+        return AdminUser.query.all()
 
-    @api.doc('user_register')
+    @api.doc('admins_user_register')
     @api.expect(register_model)
     @api.response(201, 'Successfully registered', model=registered_model)
     @api.response(409, 'User already registered')
     def post(self):
         try:
-            new_user = User(**api.payload)
+            new_user = AdminUser(**api.payload)
             db.session.add(new_user)
             db.session.commit()
 
@@ -112,13 +106,13 @@ class UserListResource(Resource):
 
 @api.route('/<int:user_id>')
 @api.param('user_id', 'The user unique identifier')
-@api.response(404, 'User not found')
-class UserResource(Resource):
-    @api.doc('get_user_profile_by_id')
+@api.response(404, 'Admin User not found')
+class AdminUserResource(Resource):
+    @api.doc('get_admin_user_profile')
     @api.marshal_with(profile_model)
     def get(self, user_id):
-        """Get a user by id."""
-        user = User.query.filter(User.id == user_id).first()
+        """Get an admin user by id."""
+        user = AdminUser.query.filter(AdminUser.id == user_id).first()
         if user is None:
             raise UserDoesNotExist
         return user
@@ -126,8 +120,8 @@ class UserResource(Resource):
     @api.expect(edit_model)
     @api.marshal_with(registered_model)
     def put(self, user_id):
-        """Replace a user by id."""
-        user = User.query.filter(User.id == user_id).first()
+        """Replace an admin user by id."""
+        user = AdminUser.query.filter(AdminUser.id == user_id).first()
         if user is None:
             raise UserDoesNotExist
         user.update_from_dict(**api.payload)
@@ -138,9 +132,9 @@ class UserResource(Resource):
 
 @api.route('/validate_token')
 class UserTokenValidatorResource(Resource):
-    """User Token Validator"""
+    """Admin user token validation"""
 
-    @api.doc('validate_user_token')
+    @api.doc('validate_admin_user_token')
     @api.expect(auth_parser)
     @api.response(200, "Success")
     @api.response(401, "Invalid token")
@@ -149,7 +143,7 @@ class UserTokenValidatorResource(Resource):
         parser_args = auth_parser.parse_args()
         auth_token = parser_args.Authorization
         try:
-            User.decode_auth_token(auth_token)
+            AdminUser.decode_auth_token(auth_token)
             return {"status": "success"}, 200
         except jwt.DecodeError:
             return {"message": "The token sent was malformed."}, 400
@@ -158,18 +152,19 @@ class UserTokenValidatorResource(Resource):
 
 
 @api.route('/login')
-class LoginResource(Resource):
-    """User Login Resource"""
+class AdminLoginResource(Resource):
+    """Admin user login"""
 
     @api.expect(login_model)
-    @api.doc('user_login')
+    @api.doc('admin_user_login')
     @api.response(201, "Success")
     @api.response(401, "Invalid credentials")
     def post(self):
         try:
             return (
                 marshal(
-                    {"token": User.check_password(**api.payload)}, decoded_token_model
+                    {"token": AdminUser.check_password(**api.payload)},
+                    decoded_token_model,
                 ),
                 201,
             )
@@ -178,10 +173,10 @@ class LoginResource(Resource):
 
 
 @api.route('/logout')
-class LogoutResource(Resource):
-    """User Logout Resource."""
+class AdminLogout(Resource):
+    """Admin user logout"""
 
-    @api.doc('user_logout')
+    @api.doc('admin_user_logout')
     @api.expect(auth_parser)
     @api.response(201, "Success")
     @api.response(401, "Invalid token")
@@ -189,7 +184,7 @@ class LogoutResource(Resource):
         parser_args = auth_parser.parse_args()
         auth_token = parser_args.Authorization
         try:
-            User.decode_auth_token(auth_token)
+            AdminUser.decode_auth_token(auth_token)
             blacklist_token = BlacklistToken(token=auth_token)
             db.session.add(blacklist_token)
             db.session.commit()
