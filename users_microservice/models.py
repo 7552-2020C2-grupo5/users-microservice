@@ -116,10 +116,6 @@ class Admin(BaseUser):  # type:ignore
     @property
     def jwt(self):
         payload = {
-            'exp': datetime.datetime.utcnow()
-            + datetime.timedelta(
-                seconds=config.jwt_expiration(cast=int, default=DEFAULT_JWT_EXPIRATION)
-            ),
             'iat': datetime.datetime.utcnow(),
             'sub': self.id,
         }
