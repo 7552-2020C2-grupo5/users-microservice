@@ -110,7 +110,7 @@ class User(BaseUser):  # type:ignore
     profile_picture = db.Column(db.String, nullable=True)
 
 
-class Admin(BaseUser):  # type:ignore
+class AdminUser(BaseUser):  # type:ignore
     """Admin user model."""
 
     @property
