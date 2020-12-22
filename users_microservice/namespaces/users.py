@@ -3,6 +3,8 @@ import os
 
 import jwt
 import sendgrid
+from email_validator import EmailNotValidError, validate_email
+from flask import request
 from flask_restx import Model, Namespace, Resource, fields, marshal
 from sendgrid.helpers.mail import Content, Email, Mail, To
 
@@ -106,13 +108,15 @@ class UserListResource(Resource):
     @api.response(409, 'User already registered')
     def post(self):
         try:
+            validate_email(request.json["email"])
             new_user = User(**api.payload)
             db.session.add(new_user)
             db.session.commit()
-
             return api.marshal(new_user, registered_model), 201
         except EmailAlreadyRegistered:
             return {"message": "The email has already been registered."}, 409
+        except EmailNotValidError:
+            return {"message": "The email is not valid"}, 409
 
 
 @api.route('/<int:user_id>')
