@@ -154,9 +154,7 @@ class ResetPasswordResource(Resource):
 
         new_pass = generate_random_password(10)
         # pylint: disable=W0212
-        user._password = bcrypt.generate_password_hash(
-            new_pass
-        ).decode()  # pylint: disable=protected-access
+        user._password = bcrypt.generate_password_hash(new_pass).decode()
         db.session.merge(user)
         db.session.commit()
 
