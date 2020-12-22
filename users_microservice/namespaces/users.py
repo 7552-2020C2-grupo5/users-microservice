@@ -1,6 +1,10 @@
 """Users namespace module."""
+import os
+
 import jwt
+import sendgrid
 from flask_restx import Model, Namespace, Resource, fields, marshal
+from sendgrid.helpers.mail import Content, Email, Mail, To
 
 from users_microservice import __version__
 from users_microservice.exceptions import (
@@ -8,7 +12,8 @@ from users_microservice.exceptions import (
     PasswordDoesNotMatch,
     UserDoesNotExist,
 )
-from users_microservice.models import BlacklistToken, User, db
+from users_microservice.models import BlacklistToken, User, bcrypt, db
+from users_microservice.utils import generate_random_password
 
 api = Namespace("Users", description="Users operations",)
 
@@ -134,6 +139,44 @@ class UserResource(Resource):
         db.session.merge(user)
         db.session.commit()
         return user
+
+
+@api.route('/<int:user_id>/reset_password')
+@api.param('user_id', 'The user unique identifier')
+@api.response(201, 'Success')
+@api.response(404, 'User not found')
+class ResetPasswordResource(Resource):
+    def post(self, user_id):
+        """Reset user password"""
+        user = User.query.filter(User.id == user_id).first()
+        if user is None:
+            raise UserDoesNotExist
+
+        new_pass = generate_random_password(10)
+        # pylint: disable=W0212
+        user._password = bcrypt.generate_password_hash(
+            new_pass
+        ).decode()  # pylint: disable=protected-access
+        db.session.merge(user)
+        db.session.commit()
+
+        sg = sendgrid.SendGridAPIClient(api_key=os.environ.get('SENDGRID_API_KEY'))
+
+        email = "bookbnb.noreply@gmail.com"
+
+        from_email = Email(email)
+        to_email = To(user.email)
+
+        subject = "BookBNB - Password Reset"
+        content_body = (
+            "Your password has been reseted. Your new password is: " + new_pass
+        )
+        content = Content("text/plain", content_body)
+
+        mail = Mail(from_email, to_email, subject, content)
+        mail_json = mail.get()
+        sg.client.mail.send.post(request_body=mail_json)
+        return {"status": "success"}, 201
 
 
 @api.route('/validate_token')
