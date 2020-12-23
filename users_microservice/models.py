@@ -13,6 +13,7 @@ from sqlalchemy_utils.types.email import EmailType
 from users_microservice.cfg import config
 from users_microservice.constants import DEFAULT_JWT_EXPIRATION, DEFAULT_SECRET_KEY
 from users_microservice.exceptions import (
+    BlockedUser,
     EmailAlreadyRegistered,
     PasswordDoesNotMatch,
     UserDoesNotExist,
@@ -58,6 +59,8 @@ class BaseUser(db.Model):  # type:ignore
         user = User.query.filter_by(email=email).first()
         if user is None:
             raise UserDoesNotExist
+        if user.blocked:
+            raise BlockedUser
         if not user.verify_password(password):
             raise PasswordDoesNotMatch
         return user.jwt
@@ -110,6 +113,7 @@ class User(BaseUser):  # type:ignore
 
     # TODO: validate URLs
     profile_picture = db.Column(db.String, nullable=True)
+    blocked = db.Column(db.Boolean, default=False)
 
 
 class AdminUser(BaseUser):  # type:ignore

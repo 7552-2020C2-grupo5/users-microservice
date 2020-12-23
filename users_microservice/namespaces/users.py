@@ -9,6 +9,7 @@ from users_microservice import __version__
 from users_microservice.cfg import config
 from users_microservice.constants import DEFAULT_RESET_PWD_EMAIL, DEFAULT_RESET_PWD_LEN
 from users_microservice.exceptions import (
+    BlockedUser,
     EmailAlreadyRegistered,
     PasswordDoesNotMatch,
     UserDoesNotExist,
@@ -26,6 +27,12 @@ auth_parser.add_argument('Authorization', type=str, location='headers', required
 def handle_user_does_not_exist(_error: UserDoesNotExist):
     """Handle missing user errors."""
     return {"message": "User does not exist"}, 404
+
+
+@api.errorhandler(BlockedUser)
+def handle_blocked_user(_error: BlockedUser):
+    """Handle blocked users."""
+    return {"message": "User has been blocked"}, 403
 
 
 base_user_model = Model(
@@ -99,7 +106,7 @@ class UserListResource(Resource):
     @api.marshal_list_with(profile_model)
     def get(self):
         """Get all users."""
-        return User.query.all()
+        return User.query.filter(User.blocked == False).all()  # noqa: E712
 
     @api.doc('user_register')
     @api.expect(register_model)
@@ -121,6 +128,7 @@ class UserListResource(Resource):
 @api.route('/<int:user_id>')
 @api.param('user_id', 'The user unique identifier')
 @api.response(404, 'User not found')
+@api.response(403, 'User is blocked')
 class UserResource(Resource):
     @api.doc('get_user_profile_by_id')
     @api.marshal_with(profile_model)
@@ -129,6 +137,8 @@ class UserResource(Resource):
         user = User.query.filter(User.id == user_id).first()
         if user is None:
             raise UserDoesNotExist
+        if user.blocked:
+            raise BlockedUser
         return user
 
     @api.expect(edit_model)
@@ -138,22 +148,41 @@ class UserResource(Resource):
         user = User.query.filter(User.id == user_id).first()
         if user is None:
             raise UserDoesNotExist
+        if user.blocked:
+            raise BlockedUser
         user.update_from_dict(**api.payload)
         db.session.merge(user)
         db.session.commit()
         return user
+
+    @api.doc('block_user')
+    @api.response(200, "User correctly blocked")
+    def delete(self, user_id):
+        """Block a user by id."""
+        user = User.query.filter(User.id == user_id).first()
+        if user is None:
+            raise UserDoesNotExist
+        if user.blocked:
+            raise BlockedUser
+        user.blocked = True
+        db.session.merge(user)
+        db.session.commit()
+        return {"message": "The user has been blocked"}, 200
 
 
 @api.route('/<int:user_id>/reset_password')
 @api.param('user_id', 'The user unique identifier')
 @api.response(201, 'Success')
 @api.response(404, 'User not found')
+@api.response(403, 'User is blocked')
 class ResetPasswordResource(Resource):
     def post(self, user_id):
         """Reset user password"""
         user = User.query.filter(User.id == user_id).first()
         if user is None:
             raise UserDoesNotExist
+        if user.blocked:
+            raise BlockedUser
 
         new_pass = generate_random_password(DEFAULT_RESET_PWD_LEN)
         user.password = new_pass

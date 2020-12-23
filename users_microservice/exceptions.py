@@ -11,3 +11,7 @@ class PasswordDoesNotMatch(Exception):
 
 class EmailAlreadyRegistered(Exception):
     pass
+
+
+class BlockedUser(Exception):
+    pass
