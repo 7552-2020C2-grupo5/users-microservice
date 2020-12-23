@@ -128,6 +128,7 @@ class UserListResource(Resource):
 @api.route('/<int:user_id>')
 @api.param('user_id', 'The user unique identifier')
 @api.response(404, 'User not found')
+@api.response(403, 'User is blocked')
 class UserResource(Resource):
     @api.doc('get_user_profile_by_id')
     @api.marshal_with(profile_model)
@@ -154,6 +155,8 @@ class UserResource(Resource):
         db.session.commit()
         return user
 
+    @api.doc('block_user')
+    @api.response(200, "User correctly blocked")
     def delete(self, user_id):
         """Block a user by id."""
         user = User.query.filter(User.id == user_id).first()
@@ -171,6 +174,7 @@ class UserResource(Resource):
 @api.param('user_id', 'The user unique identifier')
 @api.response(201, 'Success')
 @api.response(404, 'User not found')
+@api.response(403, 'User is blocked')
 class ResetPasswordResource(Resource):
     def post(self, user_id):
         """Reset user password"""
