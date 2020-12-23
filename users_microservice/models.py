@@ -2,6 +2,7 @@
 import datetime
 
 import jwt
+from email_validator import validate_email as ev_validate_email
 from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -44,6 +45,7 @@ class BaseUser(db.Model):  # type:ignore
     @validates("email")
     def validate_email(self, _key, email_address):
         user = User.query.filter(User.email == email_address).first()
+        ev_validate_email(email_address)
         if user is not None and user.id != self.id:
             raise EmailAlreadyRegistered
         return email_address

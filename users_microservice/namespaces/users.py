@@ -1,20 +1,19 @@
 """Users namespace module."""
-import os
-
 import jwt
 import sendgrid
-from email_validator import EmailNotValidError, validate_email
-from flask import request
+from email_validator import EmailNotValidError
 from flask_restx import Model, Namespace, Resource, fields, marshal
 from sendgrid.helpers.mail import Content, Email, Mail, To
 
 from users_microservice import __version__
+from users_microservice.cfg import config
+from users_microservice.constants import DEFAULT_RESET_PWD_EMAIL, DEFAULT_RESET_PWD_LEN
 from users_microservice.exceptions import (
     EmailAlreadyRegistered,
     PasswordDoesNotMatch,
     UserDoesNotExist,
 )
-from users_microservice.models import BlacklistToken, User, bcrypt, db
+from users_microservice.models import BlacklistToken, User, db
 from users_microservice.utils import generate_random_password
 
 api = Namespace("Users", description="Users operations",)
@@ -106,9 +105,9 @@ class UserListResource(Resource):
     @api.expect(register_model)
     @api.response(201, 'Successfully registered', model=registered_model)
     @api.response(409, 'User already registered')
+    @api.response(400, 'Invalid email')
     def post(self):
         try:
-            validate_email(request.json["email"])
             new_user = User(**api.payload)
             db.session.add(new_user)
             db.session.commit()
@@ -116,7 +115,7 @@ class UserListResource(Resource):
         except EmailAlreadyRegistered:
             return {"message": "The email has already been registered."}, 409
         except EmailNotValidError:
-            return {"message": "The email is not valid"}, 409
+            return {"message": "The email is not valid"}, 400
 
 
 @api.route('/<int:user_id>')
@@ -156,23 +155,20 @@ class ResetPasswordResource(Resource):
         if user is None:
             raise UserDoesNotExist
 
-        new_pass = generate_random_password(10)
-        # pylint: disable=W0212
-        user._password = bcrypt.generate_password_hash(new_pass).decode()
+        new_pass = generate_random_password(DEFAULT_RESET_PWD_LEN)
+        user.password = new_pass
         db.session.merge(user)
         db.session.commit()
 
-        sg = sendgrid.SendGridAPIClient(api_key=os.environ.get('SENDGRID_API_KEY'))
+        sg = sendgrid.SendGridAPIClient(api_key=config.sendgrid.api_key())
 
-        email = "bookbnb.noreply@gmail.com"
+        email = config.reset_pwd_email(default=DEFAULT_RESET_PWD_EMAIL)
 
         from_email = Email(email)
         to_email = To(user.email)
 
         subject = "BookBNB - Password Reset"
-        content_body = (
-            "Your password has been reseted. Your new password is: " + new_pass
-        )
+        content_body = f"Your password has been reset. Your new password is: {new_pass}"
         content = Content("text/plain", content_body)
 
         mail = Mail(from_email, to_email, subject, content)
