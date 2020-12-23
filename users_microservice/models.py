@@ -113,7 +113,7 @@ class User(BaseUser):  # type:ignore
 
     # TODO: validate URLs
     profile_picture = db.Column(db.String, nullable=True)
-    blocked = db.Column(db.Boolean, nullable=False, default=False)
+    blocked = db.Column(db.Boolean, default=False)
 
 
 class AdminUser(BaseUser):  # type:ignore
