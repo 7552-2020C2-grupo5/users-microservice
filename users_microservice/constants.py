@@ -2,5 +2,5 @@
 
 DEFAULT_SECRET_KEY = "sbv*4Ec&+S7bU_*q4779pymev9p?3VQ9"
 DEFAULT_JWT_EXPIRATION = 600
-DEFAULT_RESET_PWD_EMAIL = "noreply@bookbnb.com"
+DEFAULT_RESET_PWD_EMAIL = "bookbnb.noreply@gmail.com"
 DEFAULT_RESET_PWD_LEN = 10
