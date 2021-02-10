@@ -1,10 +1,7 @@
 """Users namespace module."""
-import os
-
 import jwt
 import sendgrid
 from email_validator import EmailNotValidError
-from flask import request
 from flask_restx import Model, Namespace, Resource, fields, marshal
 from sendgrid.helpers.mail import Content, Email, Mail, To
 
@@ -187,7 +184,7 @@ class ResetPasswordResource(Resource):
     @api.expect(password_reset_model)
     def post(self):
         """Reset user password"""
-        email = request.json["email"]
+        email = api.payload["email"]
         user = User.query.filter(User.email == email).first()
         if user is None:
             raise UserDoesNotExist
@@ -199,7 +196,7 @@ class ResetPasswordResource(Resource):
         db.session.merge(user)
         db.session.commit()
 
-        sg = sendgrid.SendGridAPIClient(api_key=os.environ.get('SENDGRID_API_KEY'))
+        sg = sendgrid.SendGridAPIClient(api_key=config.sendgrid.api_key())
 
         email = config.reset_pwd_email(default=DEFAULT_RESET_PWD_EMAIL)
 
