@@ -34,6 +34,8 @@ class BaseUser(db.Model):  # type:ignore
     _password = db.Column(db.String, nullable=False)
     email = db.Column(EmailType, unique=True, nullable=False)
     register_date = db.Column(db.DateTime, nullable=False, default=func.now())
+    wallet_address = db.Column(db.String(256))
+    wallet_mnemonic = db.Column(db.String(256))
 
     @hybrid_property
     def password(self):
