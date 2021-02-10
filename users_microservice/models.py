@@ -34,8 +34,6 @@ class BaseUser(db.Model):  # type:ignore
     _password = db.Column(db.String, nullable=False)
     email = db.Column(EmailType, unique=True, nullable=False)
     register_date = db.Column(db.DateTime, nullable=False, default=func.now())
-    wallet_address = db.Column(db.String(256))
-    wallet_mnemonic = db.Column(db.String(256))
 
     @hybrid_property
     def password(self):
@@ -120,6 +118,8 @@ class User(BaseUser):  # type:ignore
     # TODO: validate URLs
     profile_picture = db.Column(db.String, nullable=True)
     blocked = db.Column(db.Boolean, default=False)
+    wallet_address = db.Column(db.String(256))
+    wallet_mnemonic = db.Column(db.String(256))
 
 
 class AdminUser(BaseUser):  # type:ignore
