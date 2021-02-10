@@ -41,13 +41,17 @@ class BaseUser(db.Model):  # type:ignore
     def password(self):
         return self.jwt
 
+    @classmethod
+    def _hash_pasword(cls, plaintext):
+        return bcrypt.generate_password_hash(plaintext).decode()
+
     @password.setter  # type: ignore
     def password(self, plaintext):
-        self._password = bcrypt.generate_password_hash(plaintext).decode()
+        self._password = self._hash_pasword(plaintext)
 
     @validates("email")
     def validate_email(self, _key, email_address):
-        user = User.query.filter(User.email == email_address).first()
+        user = type(self).query.filter(type(self).email == email_address).first()
         ev_validate_email(email_address)
         if user is not None and user.id != self.id:
             raise EmailAlreadyRegistered
@@ -56,9 +60,9 @@ class BaseUser(db.Model):  # type:ignore
     def verify_password(self, plaintext):
         return bcrypt.check_password_hash(self._password.encode(), plaintext)
 
-    @staticmethod
-    def check_password(email, password):
-        user = User.query.filter_by(email=email).first()
+    @classmethod
+    def check_password(cls, email, password):
+        user = cls.query.filter_by(email=email).first()
         if user is None:
             raise UserDoesNotExist
         if user.blocked:
