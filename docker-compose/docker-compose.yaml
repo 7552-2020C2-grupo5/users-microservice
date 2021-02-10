@@ -1,6 +1,7 @@
 version: '3.7'
 services:
-    postgres:
+    users_microservice_postgres:
+        container_name: users_microservice_postgres
         image: postgres:11.9
         environment:
           - POSTGRES_USER=users_microservice
@@ -15,15 +16,15 @@ services:
             options:
                 max-size: 10m
                 max-file: "3"
-    api:
+    users_microservice_api:
       container_name: users_microservice_api
       depends_on:
-        - postgres
+        - users_microservice_postgres
       build:
         context: ../
         dockerfile: Dockerfile
       ports:
         - "5000:5000"
       environment:
-        - DATABASE_URL=postgres://users_microservice:users_microservice@postgres/users_microservice
+        - DATABASE_URL=postgres://users_microservice:users_microservice@users_microservice_postgres/users_microservice
       entrypoint: /app/docker-compose/api-entrypoint.sh
