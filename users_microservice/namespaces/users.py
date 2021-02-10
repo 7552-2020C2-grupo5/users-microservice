@@ -65,7 +65,12 @@ edit_model = api.model(
 
 profile_model = base_user_model.clone(
     "User profile model",
-    {"register_date": fields.DateTime(description='The date the user joined bookbnb')},
+    {
+        "register_date": fields.DateTime(
+            description='The date the user joined bookbnb'
+        ),
+        "wallet_address": fields.DateTime(description='The user wallet address'),
+    },
 )
 api.models[profile_model.name] = profile_model
 
@@ -75,6 +80,12 @@ register_model = base_user_model.clone(
     {
         "password": fields.String(
             required=True, description='The password for the new user'
+        ),
+        "wallet_address": fields.String(
+            required=True, description='The wallet address for the new user'
+        ),
+        "wallet_mnemonic": fields.String(
+            required=True, description='The wallet mnemonic for the new user'
         ),
     },
 )
@@ -86,7 +97,13 @@ registered_model = profile_model.clone(
     {
         "token": fields.String(
             required=True, attribute='password', description='The jwt'
-        )
+        ),
+        "wallet_address": fields.String(
+            required=True, description='The wallet address for the new user'
+        ),
+        "wallet_mnemonic": fields.String(
+            required=True, description='The wallet mnemonic for the new user'
+        ),
     },
 )
 api.models[registered_model.name] = registered_model
