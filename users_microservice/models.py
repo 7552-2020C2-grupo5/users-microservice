@@ -80,6 +80,8 @@ class BaseUser(db.Model):  # type:ignore
             ),
             'iat': datetime.datetime.utcnow(),
             'sub': self.id,
+            'wallet_address': self.wallet_address,
+            'wallet_mnemonic': self.wallet_mnemonic,
         }
         return jwt.encode(
             payload, config.secret_key(default=DEFAULT_SECRET_KEY), algorithm='HS256'

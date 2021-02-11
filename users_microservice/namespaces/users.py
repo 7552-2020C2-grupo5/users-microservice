@@ -62,12 +62,7 @@ edit_model = api.model(
 
 profile_model = base_user_model.clone(
     "User profile model",
-    {
-        "register_date": fields.DateTime(
-            description='The date the user joined bookbnb'
-        ),
-        "wallet_address": fields.DateTime(description='The user wallet address'),
-    },
+    {"register_date": fields.DateTime(description='The date the user joined bookbnb')},
 )
 api.models[profile_model.name] = profile_model
 
@@ -94,13 +89,7 @@ registered_model = profile_model.clone(
     {
         "token": fields.String(
             required=True, attribute='password', description='The jwt'
-        ),
-        "wallet_address": fields.String(
-            required=True, description='The wallet address for the new user'
-        ),
-        "wallet_mnemonic": fields.String(
-            required=True, description='The wallet mnemonic for the new user'
-        ),
+        )
     },
 )
 api.models[registered_model.name] = registered_model
@@ -120,7 +109,7 @@ password_reset_model = api.model(
 )
 api.models[password_reset_model.name] = password_reset_model
 
-decoded_token_model = api.model("Logged in User model", {"token": fields.String})
+logged_model = api.model("Logged in User model", {"token": fields.String})
 
 
 @api.route('')
@@ -262,9 +251,7 @@ class LoginResource(Resource):
     def post(self):
         try:
             return (
-                marshal(
-                    {"token": User.check_password(**api.payload)}, decoded_token_model
-                ),
+                marshal({"token": User.check_password(**api.payload)}, logged_model),
                 201,
             )
         except PasswordDoesNotMatch:
