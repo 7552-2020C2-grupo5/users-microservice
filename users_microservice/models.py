@@ -120,6 +120,8 @@ class User(BaseUser):  # type:ignore
     # TODO: validate URLs
     profile_picture = db.Column(db.String, nullable=True)
     blocked = db.Column(db.Boolean, default=False)
+    wallet_address = db.Column(db.String(256))
+    wallet_mnemonic = db.Column(db.String(256))
 
 
 class AdminUser(BaseUser):  # type:ignore
