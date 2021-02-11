@@ -73,6 +73,12 @@ register_model = base_user_model.clone(
         "password": fields.String(
             required=True, description='The password for the new user'
         ),
+        "wallet_address": fields.String(
+            required=True, description='The wallet address for the new user'
+        ),
+        "wallet_mnemonic": fields.String(
+            required=True, description='The wallet mnemonic for the new user'
+        ),
     },
 )
 api.models[register_model.name] = register_model
@@ -103,7 +109,7 @@ password_reset_model = api.model(
 )
 api.models[password_reset_model.name] = password_reset_model
 
-decoded_token_model = api.model("Logged in User model", {"token": fields.String})
+logged_model = api.model("Logged in User model", {"token": fields.String})
 
 
 @api.route('')
@@ -245,9 +251,7 @@ class LoginResource(Resource):
     def post(self):
         try:
             return (
-                marshal(
-                    {"token": User.check_password(**api.payload)}, decoded_token_model
-                ),
+                marshal({"token": User.check_password(**api.payload)}, logged_model),
                 201,
             )
         except PasswordDoesNotMatch:
