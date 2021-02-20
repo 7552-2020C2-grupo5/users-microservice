@@ -103,6 +103,14 @@ login_model = api.model(
     },
 )
 
+wallet_model = api.model(
+    "User Wallet Model",
+    {
+        "address": fields.String(description="The wallet address"),
+        "mnemonic": fields.String(description="The wallet mnemonic"),
+    },
+)
+
 password_reset_model = api.model(
     "Reset password model",
     {"email": fields.String(required=True, description="The user email")},
@@ -110,6 +118,7 @@ password_reset_model = api.model(
 api.models[password_reset_model.name] = password_reset_model
 
 logged_model = api.model("Logged in User model", {"token": fields.String})
+error_model = api.model("Error Model", {"message": fields.String})
 
 
 @api.route('')
@@ -279,3 +288,22 @@ class LogoutResource(Resource):
             return {"message": "Signature expired. Please log in again."}, 401
         except jwt.InvalidTokenError:
             return {"message": "Invalid token. Please log in again."}, 401
+
+
+@api.route('/wallet/<int:user_id>')
+class WalletResource(Resource):
+    """User Wallet Resource."""
+
+    @api.doc('user_wallet')
+    @api.response(code=200, model=wallet_model, description='Success')
+    @api.response(code=404, model=error_model, description='User Not Found')
+    @api.response(code=403, model=error_model, description='User Blocked')
+    def get(self, user_id):
+        user = User.query.filter(User.id == user_id).first()
+        if user is None:
+            raise UserDoesNotExist
+        if user.blocked:
+            raise BlockedUser
+
+        response = {"address": user.wallet_address, "mnemonic": user.wallet_mnemonic}
+        return response, 200
