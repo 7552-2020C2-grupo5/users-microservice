@@ -73,6 +73,12 @@ register_model = base_user_model.clone(
         "password": fields.String(
             required=True, description='The password for the new user'
         ),
+        "wallet_address": fields.String(
+            required=True, description='The wallet address for the new user'
+        ),
+        "wallet_mnemonic": fields.String(
+            required=True, description='The wallet mnemonic for the new user'
+        ),
     },
 )
 api.models[register_model.name] = register_model
@@ -97,13 +103,22 @@ login_model = api.model(
     },
 )
 
+wallet_model = api.model(
+    "User Wallet Model",
+    {
+        "address": fields.String(description="The wallet address"),
+        "mnemonic": fields.String(description="The wallet mnemonic"),
+    },
+)
+
 password_reset_model = api.model(
     "Reset password model",
     {"email": fields.String(required=True, description="The user email")},
 )
 api.models[password_reset_model.name] = password_reset_model
 
-decoded_token_model = api.model("Logged in User model", {"token": fields.String})
+logged_model = api.model("Logged in User model", {"token": fields.String})
+error_model = api.model("Error Model", {"message": fields.String})
 
 
 @api.route('')
@@ -245,9 +260,7 @@ class LoginResource(Resource):
     def post(self):
         try:
             return (
-                marshal(
-                    {"token": User.check_password(**api.payload)}, decoded_token_model
-                ),
+                marshal({"token": User.check_password(**api.payload)}, logged_model),
                 201,
             )
         except PasswordDoesNotMatch:
@@ -275,3 +288,22 @@ class LogoutResource(Resource):
             return {"message": "Signature expired. Please log in again."}, 401
         except jwt.InvalidTokenError:
             return {"message": "Invalid token. Please log in again."}, 401
+
+
+@api.route('/wallet/<int:user_id>')
+class WalletResource(Resource):
+    """User Wallet Resource."""
+
+    @api.doc('user_wallet')
+    @api.response(code=200, model=wallet_model, description='Success')
+    @api.response(code=404, model=error_model, description='User Not Found')
+    @api.response(code=403, model=error_model, description='User Blocked')
+    def get(self, user_id):
+        user = User.query.filter(User.id == user_id).first()
+        if user is None:
+            raise UserDoesNotExist
+        if user.blocked:
+            raise BlockedUser
+
+        response = {"address": user.wallet_address, "mnemonic": user.wallet_mnemonic}
+        return response, 200
