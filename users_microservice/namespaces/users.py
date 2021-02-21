@@ -56,7 +56,6 @@ edit_model = api.model(
         "profile_picture": fields.String(
             required=False, description="URL pointing to the user's profile picture"
         ),
-        "email": fields.String(required=False, description='The user email'),
     },
 )
 
