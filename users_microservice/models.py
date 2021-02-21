@@ -63,8 +63,6 @@ class BaseUser(db.Model):  # type:ignore
         user = cls.query.filter_by(email=email).first()
         if user is None:
             raise UserDoesNotExist
-        if user.blocked:
-            raise BlockedUser
         if not user.verify_password(password):
             raise PasswordDoesNotMatch
         return user.jwt
@@ -136,6 +134,17 @@ class User(BaseUser):  # type:ignore
         return jwt.encode(
             payload, config.secret_key(default=DEFAULT_SECRET_KEY), algorithm='HS256'
         ).decode()
+
+    @classmethod
+    def check_password(cls, email, password):
+        user = cls.query.filter_by(email=email).first()
+        if user is None:
+            raise UserDoesNotExist
+        if user.blocked:
+            raise BlockedUser
+        if not user.verify_password(password):
+            raise PasswordDoesNotMatch
+        return user.jwt
 
 
 class AdminUser(BaseUser):  # type:ignore
