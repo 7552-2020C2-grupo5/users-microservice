@@ -95,4 +95,10 @@ def test_block_user(client, user):
     assert response._status_code == 403
     user_login = {"email": user["email"], "password": user["password"]}
     response = client.post("/v1/admins/login", json=user_login)
-    assert response._status_code == 404
+    assert response._status_code == 401
+
+
+def test_login_user_does_not_exist(client):
+    user_login = {"email": "dulcedeleche@gmail.com", "password": "TeHacesElHosco"}
+    response = client.post("/v1/admins/login", json=user_login)
+    assert response._status_code == 401

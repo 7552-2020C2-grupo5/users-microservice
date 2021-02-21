@@ -174,6 +174,8 @@ class AdminLoginResource(Resource):
             )
         except PasswordDoesNotMatch:
             return {"message": "Password does not match."}, 402
+        except UserDoesNotExist:
+            return {"message": "Invalid credentials"}, 401
 
 
 @api.route('/logout')
