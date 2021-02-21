@@ -1,5 +1,6 @@
 """Sample test suite."""
 
+import json
 import logging
 import tempfile
 
@@ -47,6 +48,18 @@ def admin():
     }
 
 
+@pytest.fixture
+def user():
+    return {
+        "first_name": "Franco",
+        "last_name": "Milazzo",
+        "email": "stallone@gmail.com",
+        "password": "Schwarzenegger",
+        "wallet_address": "1287912123012912309",
+        "wallet_mnemonic": "valentia y fuerza contra cualquier amenaza",
+    }
+
+
 def test_root(client):
     response = client.get("/")
     assert response._status_code == 200
@@ -70,3 +83,16 @@ def test_login_admin(client, admin):
     admin_login = {"email": admin["email"], "password": admin["password"]}
     response = client.post("/v1/admins/login", json=admin_login)
     assert response._status_code == 201
+
+
+def test_block_user(client, user):
+    response = client.post("/v1/users", json=user)
+    assert response._status_code == 201
+    user_data = json.loads(response.data)
+    response = client.delete(f"/v1/users/{user_data['id']}")
+    assert response._status_code == 200
+    response = client.delete(f"/v1/users/{user_data['id']}")
+    assert response._status_code == 403
+    user_login = {"email": user["email"], "password": user["password"]}
+    response = client.post("/v1/admins/login", json=user_login)
+    assert response._status_code == 404
