@@ -40,7 +40,7 @@ def admin():
     return {
         "first_name": "Máximo",
         "last_name": "Cozzetti",
-        "email": "ravenna@simuladores.ar",
+        "email": "ravenna@gmail.com",
         "password": "DebilitadorSocial",
     }
 
@@ -53,3 +53,11 @@ def test_root(client):
 def test_create_admin_invalid_email(client, invalid_email_admin):
     response = client.post("/v1/admins", json=invalid_email_admin)
     assert response._status_code == 400
+
+
+def test_login_admin(client, admin):
+    response = client.post("/v1/admins", json=admin)
+    assert response._status_code == 201
+    admin_login = {"email": admin["email"], "password": admin["password"]}
+    response = client.post("/v1/admins/login", json=admin_login)
+    assert response._status_code == 201
