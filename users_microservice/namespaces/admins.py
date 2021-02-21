@@ -1,5 +1,6 @@
 """Admin users namespace module."""
 import jwt
+from email_validator import EmailSyntaxError
 from flask_restx import Model, Namespace, Resource, fields, marshal
 
 from users_microservice import __version__
@@ -93,6 +94,7 @@ class AdminUserListResource(Resource):
     @api.expect(register_model)
     @api.response(201, 'Successfully registered', model=registered_model)
     @api.response(409, 'Admin user already registered')
+    @api.response(400, 'Bad request')
     def post(self):
         try:
             new_user = AdminUser(**api.payload)
@@ -102,6 +104,8 @@ class AdminUserListResource(Resource):
             return api.marshal(new_user, registered_model), 201
         except EmailAlreadyRegistered:
             return {"message": "The email has already been registered."}, 409
+        except EmailSyntaxError as e:
+            return {"message": str(e)}, 400
 
 
 @api.route('/<int:user_id>')
