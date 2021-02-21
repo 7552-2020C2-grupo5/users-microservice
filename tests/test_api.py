@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 @pytest.fixture
 def client():
     with tempfile.NamedTemporaryFile() as dbf:
-        app = create_app(test_db=dbf.name)
+        app = create_app(test_db=f"sqlite:///{dbf.name}")
         with app.app_context():
             from flask_migrate import upgrade as _upgrade
 
