@@ -1,7 +1,9 @@
 """Admin users namespace module."""
+import operator as ops
+
 import jwt
 from email_validator import EmailSyntaxError
-from flask_restx import Model, Namespace, Resource, fields, marshal
+from flask_restx import Model, Namespace, Resource, fields, marshal, reqparse
 
 from users_microservice import __version__
 from users_microservice.exceptions import (
@@ -10,6 +12,7 @@ from users_microservice.exceptions import (
     UserDoesNotExist,
 )
 from users_microservice.models import AdminUser, BlacklistToken, db
+from users_microservice.utils import FilterParam
 
 api = Namespace("Admin Users", description="Admin Users operations",)
 
@@ -82,13 +85,43 @@ login_model = api.model(
 decoded_token_model = api.model("Logged in User model", {"token": fields.String})
 
 
+admin_user_parser = reqparse.RequestParser()
+admin_user_parser.add_argument(
+    "first_name",
+    type=FilterParam("first_name", ops.contains, schema=str),
+    help="First name to filter on",
+    store_missing=False,
+)
+admin_user_parser.add_argument(
+    "last_name",
+    type=FilterParam("last_name", ops.contains, schema=str),
+    help="Last name to filter on",
+    store_missing=False,
+)
+admin_user_parser.add_argument(
+    "email",
+    type=FilterParam("email", ops.contains, schema=str),
+    help="Email to filter on",
+    store_missing=False,
+)
+
+
 @api.route('')
 class AdminUserListResource(Resource):
     @api.doc('list_admin_users_profiles')
     @api.marshal_list_with(profile_model)
+    @api.expect(admin_user_parser)
     def get(self):
         """Get all admin users."""
-        return AdminUser.query.all()
+        params = admin_user_parser.parse_args()
+
+        query = AdminUser.query
+        for _, filter_op in params.items():
+            if not isinstance(filter_op, FilterParam):
+                continue
+            query = filter_op.apply(query, AdminUser)
+
+        return query.all()
 
     @api.doc('admin_user_register')
     @api.expect(register_model)

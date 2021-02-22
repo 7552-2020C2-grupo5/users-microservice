@@ -1,8 +1,10 @@
 """Users namespace module."""
+import operator as ops
+
 import jwt
 import sendgrid
 from email_validator import EmailNotValidError
-from flask_restx import Model, Namespace, Resource, fields, marshal
+from flask_restx import Model, Namespace, Resource, fields, marshal, reqparse
 from sendgrid.helpers.mail import Content, Email, Mail, To
 
 from users_microservice import __version__
@@ -15,7 +17,7 @@ from users_microservice.exceptions import (
     UserDoesNotExist,
 )
 from users_microservice.models import BlacklistToken, User, db
-from users_microservice.utils import generate_random_password
+from users_microservice.utils import FilterParam, generate_random_password
 
 api = Namespace("Users", description="Users operations",)
 
@@ -119,14 +121,43 @@ api.models[password_reset_model.name] = password_reset_model
 logged_model = api.model("Logged in User model", {"token": fields.String})
 error_model = api.model("Error Model", {"message": fields.String})
 
+user_parser = reqparse.RequestParser()
+user_parser.add_argument(
+    "first_name",
+    type=FilterParam("first_name", ops.contains, schema=str),
+    help="First name to filter on",
+    store_missing=False,
+)
+user_parser.add_argument(
+    "last_name",
+    type=FilterParam("last_name", ops.contains, schema=str),
+    help="Last name to filter on",
+    store_missing=False,
+)
+user_parser.add_argument(
+    "email",
+    type=FilterParam("email", ops.contains, schema=str),
+    help="Email to filter on",
+    store_missing=False,
+)
+
 
 @api.route('')
 class UserListResource(Resource):
     @api.doc('list_users_profiles')
     @api.marshal_list_with(profile_model)
+    @api.expect(user_parser)
     def get(self):
         """Get all users."""
-        return User.query.filter(User.blocked == False).all()  # noqa: E712
+        params = user_parser.parse_args()
+
+        query = User.query.filter(User.blocked == False)  # noqa: E712
+        for _, filter_op in params.items():
+            if not isinstance(filter_op, FilterParam):
+                continue
+            query = filter_op.apply(query, User)
+
+        return query.all()
 
     @api.doc('user_register')
     @api.expect(register_model)
