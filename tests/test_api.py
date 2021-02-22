@@ -48,6 +48,16 @@ def admin():
 
 
 @pytest.fixture
+def admin2():
+    return {
+        "first_name": "Brian",
+        "last_name": "Kernighan",
+        "email": "bk@gmail.com",
+        "password": "Princeton",
+    }
+
+
+@pytest.fixture
 def user():
     return {
         "first_name": "Franco",
@@ -56,6 +66,18 @@ def user():
         "password": "Schwarzenegger",
         "wallet_address": "1287912123012912309",
         "wallet_mnemonic": "valentia y fuerza contra cualquier amenaza",
+    }
+
+
+@pytest.fixture
+def user2():
+    return {
+        "first_name": "Dennis",
+        "last_name": "Ritchie",
+        "email": "dritchie@gmail.com",
+        "password": "Harvard",
+        "wallet_address": "1287912123012912309",
+        "wallet_mnemonic": "The C programming language",
     }
 
 
@@ -101,3 +123,119 @@ def test_login_user_does_not_exist(client):
     user_login = {"email": "dulcedeleche@gmail.com", "password": "TeHacesElHosco"}
     response = client.post("/v1/admins/login", json=user_login)
     assert response._status_code == 401
+
+
+def test_filter_admin_first_name(client, admin, admin2):
+    _ = client.post("/v1/admins", json=admin)
+    _ = client.post("/v1/admins", json=admin2)
+    filtered = client.get(f"/v1/admins?first_name={admin['first_name']}")
+    assert filtered._status_code == 200
+    filtered_data = json.loads(filtered.data)
+    assert len(filtered_data) == 1
+    assert filtered_data[0]["first_name"] == admin['first_name']
+
+
+def test_filter_admin_first_name_partial(client, admin, admin2):
+    _ = client.post("/v1/admins", json=admin)
+    _ = client.post("/v1/admins", json=admin2)
+    filtered = client.get(f"/v1/admins?first_name={admin['first_name'][:3]}")
+    assert filtered._status_code == 200
+    filtered_data = json.loads(filtered.data)
+    assert len(filtered_data) == 1
+    assert filtered_data[0]["first_name"] == admin['first_name']
+
+
+def test_filter_admin_first_name_not_exists(client, admin, admin2):
+    _ = client.post("/v1/admins", json=admin)
+    _ = client.post("/v1/admins", json=admin2)
+    filtered = client.get("/v1/admins?first_name=asdfdsafasfas")
+    assert filtered._status_code == 200
+    filtered_data = json.loads(filtered.data)
+    assert len(filtered_data) == 0
+
+
+def test_filter_admin_last_name(client, admin, admin2):
+    _ = client.post("/v1/admins", json=admin)
+    _ = client.post("/v1/admins", json=admin2)
+    filtered = client.get(f"/v1/admins?last_name={admin['last_name']}")
+    assert filtered._status_code == 200
+    filtered_data = json.loads(filtered.data)
+    assert len(filtered_data) == 1
+    assert filtered_data[0]["last_name"] == admin['last_name']
+
+
+def test_filter_admin_last_name_partial(client, admin, admin2):
+    _ = client.post("/v1/admins", json=admin)
+    _ = client.post("/v1/admins", json=admin2)
+    filtered = client.get(f"/v1/admins?last_name={admin['last_name'][:4]}")
+    assert filtered._status_code == 200
+    filtered_data = json.loads(filtered.data)
+    assert len(filtered_data) == 1
+    assert filtered_data[0]["last_name"] == admin['last_name']
+
+
+def test_filter_admin_last_name_not_exists(client, admin, admin2):
+    _ = client.post("/v1/admins", json=admin)
+    _ = client.post("/v1/admins", json=admin2)
+    filtered = client.get("/v1/admins?last_name=asdfdsafasfas")
+    assert filtered._status_code == 200
+    filtered_data = json.loads(filtered.data)
+    assert len(filtered_data) == 0
+
+
+def test_filter_user_first_name(client, user, user2):
+    _ = client.post("/v1/users", json=user)
+    _ = client.post("/v1/users", json=user2)
+    filtered = client.get(f"/v1/users?first_name={user['first_name']}")
+    assert filtered._status_code == 200
+    filtered_data = json.loads(filtered.data)
+    assert len(filtered_data) == 1
+    assert filtered_data[0]["first_name"] == user['first_name']
+
+
+def test_filter_user_first_name_partial(client, user, user2):
+    _ = client.post("/v1/users", json=user)
+    _ = client.post("/v1/users", json=user2)
+    filtered = client.get(f"/v1/users?first_name={user['first_name'][:3]}")
+    assert filtered._status_code == 200
+    filtered_data = json.loads(filtered.data)
+    assert len(filtered_data) == 1
+    assert filtered_data[0]["first_name"] == user['first_name']
+
+
+def test_filter_user_first_name_not_exists(client, user, user2):
+    _ = client.post("/v1/users", json=user)
+    _ = client.post("/v1/users", json=user2)
+    filtered = client.get("/v1/users?first_name=asdfdsafasfas")
+    assert filtered._status_code == 200
+    filtered_data = json.loads(filtered.data)
+    assert len(filtered_data) == 0
+
+
+def test_filter_user_last_name(client, user, user2):
+    _ = client.post("/v1/users", json=user)
+    _ = client.post("/v1/users", json=user2)
+    filtered = client.get(f"/v1/users?last_name={user['last_name']}")
+    assert filtered._status_code == 200
+    filtered_data = json.loads(filtered.data)
+    assert len(filtered_data) == 1
+    assert filtered_data[0]["last_name"] == user['last_name']
+
+
+def test_filter_user_last_name_partial(client, user, user2):
+    _ = client.post("/v1/users", json=user)
+    _ = client.post("/v1/users", json=user2)
+    filtered = client.get(f"/v1/users?last_name={user['last_name'][:4]}")
+    assert filtered._status_code == 200
+    filtered_data = json.loads(filtered.data)
+    assert len(filtered_data) == 1
+    assert filtered_data[0]["last_name"] == user['last_name']
+
+
+def test_filter_user_last_name_not_exists(client, user, user2):
+    _ = client.post("/v1/users", json=user)
+    _ = client.post("/v1/users", json=user2)
+    filtered = client.get("/v1/users?last_name=asdfdsafasfas")
+    assert filtered._status_code == 200
+    filtered_data = json.loads(filtered.data)
+    assert len(filtered_data) == 0
