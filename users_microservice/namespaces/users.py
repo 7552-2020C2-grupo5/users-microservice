@@ -105,11 +105,7 @@ login_model = api.model(
 )
 
 wallet_model = api.model(
-    "User Wallet Model",
-    {
-        "address": fields.String(description="The wallet address"),
-        "mnemonic": fields.String(description="The wallet mnemonic"),
-    },
+    "User Wallet Model", {"address": fields.String(description="The wallet address")},
 )
 
 password_reset_model = api.model(
@@ -335,5 +331,5 @@ class WalletResource(Resource):
         if user.blocked:
             raise BlockedUser
 
-        response = {"address": user.wallet_address, "mnemonic": user.wallet_mnemonic}
+        response = {"address": user.wallet_address}
         return response, 200
