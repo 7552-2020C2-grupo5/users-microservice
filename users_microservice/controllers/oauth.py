@@ -30,9 +30,6 @@ def validated_token(token, verify=True):
             )
         )
     )
-    print(
-        f"url is {url} and audience {config.oauth.audience(default=DEFAULT_AUDIENCE)}"
-    )
     logger.info("JWK url is %s", url)
     jwks_client = PyJWKClient(url)
     signing_key = jwks_client.get_signing_key_from_jwt(token)

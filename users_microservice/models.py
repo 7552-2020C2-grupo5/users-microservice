@@ -79,7 +79,7 @@ class BaseUser(db.Model):  # type:ignore
         }
         return jwt.encode(
             payload, config.secret_key(default=DEFAULT_SECRET_KEY), algorithm='HS256'
-        ).decode()
+        )
 
     @staticmethod
     def decode_auth_token(auth_token) -> int:
@@ -133,7 +133,7 @@ class User(BaseUser):  # type:ignore
         }
         return jwt.encode(
             payload, config.secret_key(default=DEFAULT_SECRET_KEY), algorithm='HS256'
-        ).decode()
+        )
 
     @classmethod
     def check_password(cls, email, password):
@@ -158,7 +158,7 @@ class AdminUser(BaseUser):  # type:ignore
         }
         return jwt.encode(
             payload, config.secret_key(default=DEFAULT_SECRET_KEY), algorithm='HS256'
-        ).decode()
+        )
 
 
 class BlacklistToken(db.Model):  # type:ignore

@@ -92,7 +92,6 @@ def test_create_admin_invalid_email(client, invalid_email_admin):
 
 
 def test_login_root_admin(client):
-    print(client.get("/v1/admins").data)
     admin_login = {"email": "admin@bookbnb.com", "password": "admin_bookbnb"}
     response = client.post("/v1/admins/login", json=admin_login)
     assert response._status_code == 201
