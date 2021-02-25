@@ -205,9 +205,7 @@ class AdminLoginResource(Resource):
                 ),
                 201,
             )
-        except PasswordDoesNotMatch:
-            return {"message": "Password does not match."}, 402
-        except UserDoesNotExist:
+        except (PasswordDoesNotMatch, UserDoesNotExist):
             return {"message": "Invalid credentials"}, 401
 
 
