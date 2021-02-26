@@ -2,7 +2,7 @@
 import operator as ops
 
 import jwt
-from email_validator import EmailSyntaxError
+from email_validator import EmailNotValidError
 from flask_restx import Model, Namespace, Resource, fields, marshal, reqparse
 
 from users_microservice import __version__
@@ -137,7 +137,7 @@ class AdminUserListResource(Resource):
             return api.marshal(new_user, registered_model), 201
         except EmailAlreadyRegistered:
             return {"message": "The email has already been registered."}, 409
-        except EmailSyntaxError as e:
+        except EmailNotValidError as e:
             return {"message": str(e)}, 400
 
 
@@ -205,9 +205,7 @@ class AdminLoginResource(Resource):
                 ),
                 201,
             )
-        except PasswordDoesNotMatch:
-            return {"message": "Password does not match."}, 402
-        except UserDoesNotExist:
+        except (PasswordDoesNotMatch, UserDoesNotExist):
             return {"message": "Invalid credentials"}, 401
 
 
