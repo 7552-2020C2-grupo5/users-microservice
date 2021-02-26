@@ -16,8 +16,8 @@ def pad(metric, start_date, end_date):
     current_date = start_date
 
     while current_date <= end_date:
-        if start_date.isoformat() not in dates:
-            metric["data"].append({"date": start_date.isoformat(), "value": 0})
+        if current_date.isoformat() not in dates:
+            metric["data"].append({"date": current_date.isoformat(), "value": 0})
         current_date += td(days=1)
 
     metric["data"] = sorted(metric["data"], key=lambda x: x.get("date"))
