@@ -19,6 +19,7 @@ logger.setLevel(logging.INFO)
 
 
 def validated_token(token, verify=True):
+    """Validate a token and return decoded token."""
     url = (
         requests.get(
             config.oauth.google_openid_config_uri(default=DEFAULT_GOOGLE_OPENID_CFG_URI)
@@ -46,11 +47,13 @@ def validated_token(token, verify=True):
 
 
 def oauth_user(token):
+    """Get user from token."""
     decoded_token = validated_token(token, False)
     return User.query.filter(User.email == decoded_token["email"]).first()
 
 
 def create_oauth_user(token, wallet_address, wallet_mnemonic):
+    """Create a new user from OAuth token."""
     if oauth_user(token) is not None:
         raise EmailAlreadyRegistered
 
