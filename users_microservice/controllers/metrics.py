@@ -1,31 +1,62 @@
 """Metrics controller."""
+import logging
+from datetime import date
 from datetime import timedelta as td
+from functools import wraps
 
 from sqlalchemy import func
 
 from users_microservice.models import User
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
-def prepare(name, query, cols):
-    return {"name": name, "data": [dict(zip(cols, r)) for r in query]}
+
+def isodate(x):
+    try:
+        return date.fromisoformat(x)
+    except TypeError:
+        return x
 
 
-def pad(metric, start_date, end_date):
-    dates = [d.get("date") for d in metric.get("data")]
+def pad(count, start_date: date, end_date: date):
+    dates = [x.get("date") for x in count]
 
     current_date = start_date
 
     while current_date <= end_date:
-        if current_date.isoformat() not in dates:
-            metric["data"].append({"date": current_date.isoformat(), "value": 0})
+        if current_date not in dates:
+            count.append({"date": current_date, "value": 0.0})
         current_date += td(days=1)
 
-    metric["data"] = sorted(metric["data"], key=lambda x: x.get("date"))
+    count = sorted(count, key=lambda x: x.get("date"))
 
-    return metric
+    return count
 
 
-def new_users_per_day(start_date, end_date):
+def data_map(count):
+    return [{"date": isodate(rdate), "value": rval} for rdate, rval in count]
+
+
+def prepare_metric(name):
+    def decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            count = f(*args, **kwargs)
+            count = data_map(count)
+            count = pad(count, *args)
+            return {
+                "name": name,
+                "data": count,
+            }
+
+        return wrapper
+
+    return decorator
+
+
+@prepare_metric("new_users_per_day")
+def new_users_per_day(start_date: date, end_date: date):
     count = (
         User.query.filter(func.date(User.register_date).between(start_date, end_date))
         .with_entities(func.date(User.register_date), func.count(User.id))
@@ -33,9 +64,7 @@ def new_users_per_day(start_date, end_date):
         .order_by(func.date(User.register_date))
         .all()
     )
-    metric = prepare("new_users_per_day", count, ["date", "value"])
-    metric = pad(metric, start_date, end_date)
-    return metric
+    return count
 
 
 all_metrics = [new_users_per_day]
