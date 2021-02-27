@@ -5,7 +5,6 @@ from flask_restx import Namespace, Resource, fields, reqparse
 
 from users_microservice import __version__
 from users_microservice.controllers.oauth import create_oauth_user, oauth_user
-from users_microservice.models import BlacklistToken, db
 
 api = Namespace("OAuth", description="OAuth login operations",)
 
@@ -70,7 +69,12 @@ class OAuthUserResource(Resource):
     @api.expect(oauth_register_model)
     @api.marshal_with(oauth_user_model)
     def post(self):
-        user = create_oauth_user(**api.payload)
+        try:
+            user = create_oauth_user(**api.payload)
+        except jwt.DecodeError:
+            return {"message": "The token sent was malformed."}, 400
+        except (jwt.ExpiredSignatureError, jwt.InvalidTokenError,) as e:
+            return {"message": str(e)}, 401
         return user
 
 
@@ -88,26 +92,3 @@ class OAuthLogin(Resource):
             return api.marshal({"token": oauth_user(token).jwt}, logged_model), 201
         except:  # noqa: E722 pylint: disable=bare-except
             return {"message": "Error on OAuth login"}, 401
-
-
-@api.route('/logout')
-class OAuthLogout(Resource):
-    """OAuth user logout resource."""
-
-    @api.doc('oauth_logout')
-    @api.expect(oauth_parser)
-    @api.response(201, "Success")
-    @api.response(401, "Invalid token")
-    def post(self):
-        parser_args = oauth_parser.parse_args()
-        auth_token = parser_args.Authorization
-        try:
-            auth_token = api.payload.get("token")
-            blacklist_token = BlacklistToken(token=auth_token)
-            db.session.add(blacklist_token)
-            db.session.commit()
-            return {'status': 'success', 'message': 'Successfully logged out.'}, 201
-        except jwt.ExpiredSignatureError:
-            return {"message": "Signature expired. Please log in again."}, 401
-        except jwt.InvalidTokenError:
-            return {"message": "Invalid token. Please log in again."}, 401
