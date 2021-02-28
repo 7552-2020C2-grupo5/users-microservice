@@ -13,3 +13,7 @@ DEFAULT_GOOGLE_OPENID_CFG_JWKS_KEY = "jwks_uri"
 DEFAULT_AUDIENCE = (
     "323498260525-irodasbifo350ic2lftmj226ltink5mp.apps.googleusercontent.com"
 )
+
+DEFAULT_VERIFICATION_URL = (
+    "https://tokens-microservice.herokuapp.com/v1/tokens/verification"
+)
