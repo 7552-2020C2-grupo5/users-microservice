@@ -67,15 +67,17 @@ class OAuthUserResource(Resource):
 
     @api.doc('oauth_register')
     @api.expect(oauth_register_model)
-    @api.marshal_with(oauth_user_model)
+    @api.response(200, "OAuth register successful", oauth_user_model)
+    @api.response(400, "Malformed token")
+    @api.response(401, "Unable to authenticate")
     def post(self):
         try:
             user = create_oauth_user(**api.payload)
+            return api.marshal(oauth_user_model, user)
         except jwt.DecodeError:
             return {"message": "The token sent was malformed."}, 400
         except (jwt.ExpiredSignatureError, jwt.InvalidTokenError,) as e:
-            return {"message": str(e)}, 401
-        return user
+            return {"message": f"{e}"}, 401
 
 
 @api.route('/login')
