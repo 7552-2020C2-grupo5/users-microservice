@@ -6,7 +6,11 @@ import logging
 import requests
 
 from users_microservice.cfg import config
-from users_microservice.exceptions import ServerTokenError, UnsetServerToken
+from users_microservice.exceptions import (
+    InvalidEnvironment,
+    ServerTokenError,
+    UnsetServerToken,
+)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -42,6 +46,8 @@ def _patch_env_vars(env_vars):
 
 
 def add_end_var(key, val):
+    if config.env(default="DEV") == "DEV":
+        raise InvalidEnvironment
     try:
         env_vars = get_env_vars()
         env_vars[key.upper()] = val
@@ -51,6 +57,8 @@ def add_end_var(key, val):
 
 
 def remove_env_var(key):
+    if config.env(default="DEV") == "DEV":
+        raise InvalidEnvironment
     try:
         env_vars = get_env_vars()
         env_vars.pop(key)
