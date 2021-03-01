@@ -15,3 +15,11 @@ class EmailAlreadyRegistered(Exception):
 
 class BlockedUser(Exception):
     pass
+
+
+class ServerTokenError(Exception):
+    pass
+
+
+class UnsetServerToken(Exception):
+    pass
