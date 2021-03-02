@@ -41,11 +41,16 @@ def before_request():
         or request.method == "OPTIONS"
     ):
         return
+
     bookbnb_token = request.headers.get("BookBNB-Authorization")
     if bookbnb_token is None:
         return {"message": "BookBNB token is missing"}, 401
 
-    r = requests.post(config.token_verification_url(default=DEFAULT_VERIFICATION_URL))
+    r = requests.post(
+        config.token_verification_url(default=DEFAULT_VERIFICATION_URL),
+        json={"token": bookbnb_token},
+        headers={"BookBNB_Authorization": config.bookbnb_token()},
+    )
 
     if not r.ok:
         return {"message": "Invalid BookBNB token"}, 401
