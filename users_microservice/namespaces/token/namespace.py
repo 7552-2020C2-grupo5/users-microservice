@@ -3,11 +3,7 @@
 from flask_restx import Namespace, Resource, fields
 
 from users_microservice.constants import BOOKBNB_TOKEN
-from users_microservice.exceptions import (
-    InvalidEnvironment,
-    ServerTokenError,
-    UnsetServerToken,
-)
+from users_microservice.exceptions import ServerTokenError, UnsetServerToken
 
 from .controller import add_end_var, remove_env_var
 
@@ -21,7 +17,6 @@ class ServerTokenResource(Resource):
     @ns.doc('add_server_token')
     @ns.expect(server_token_model)
     @ns.response(200, "Server token removed")
-    @ns.response(403, "Invalid environment")
     @ns.response(500, "Error processing request")
     def post(self):
         """Register server token."""
@@ -29,15 +24,12 @@ class ServerTokenResource(Resource):
             data = ns.payload
             add_end_var(BOOKBNB_TOKEN, data.get("token"))
             return {"message": "success"}, 200
-        except InvalidEnvironment:
-            return {"message": "Invalid environment"}, 403
         except ServerTokenError as e:
             ns.logger.error("Error setting server token", exc_info=e)
             return {"message": f"{e}"}, 500
 
     @ns.response(200, "Server token removed")
     @ns.response(400, "Error when removing")
-    @ns.response(403, "Invalid environment")
     @ns.response(500, "Error processing request")
     @ns.doc('remove_server_token')
     def delete(self):
@@ -45,8 +37,6 @@ class ServerTokenResource(Resource):
         try:
             remove_env_var(BOOKBNB_TOKEN)
             return {"message": "success"}, 200
-        except InvalidEnvironment:
-            return {"message": "Invalid environment"}, 403
         except UnsetServerToken:
             return {"message": "server token was not set"}, 400
         except ServerTokenError as e:
