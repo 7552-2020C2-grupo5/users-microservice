@@ -77,6 +77,7 @@ class OAuthUserResource(Resource):
         except jwt.DecodeError:
             return {"message": "The token sent was malformed."}, 400
         except (jwt.ExpiredSignatureError, jwt.InvalidTokenError,) as e:
+            api.logger.error("Error: ", exc_info=e)
             return {"message": f"{e}"}, 401
 
 
