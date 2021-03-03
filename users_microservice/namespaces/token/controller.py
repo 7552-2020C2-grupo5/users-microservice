@@ -53,7 +53,7 @@ def add_end_var(key, val):
 def remove_env_var(key):
     try:
         env_vars = get_env_vars()
-        env_vars.pop(key)
+        env_vars.pop(key.upper())
         _patch_env_vars(env_vars)
     except KeyError as e:
         raise UnsetServerToken from e
