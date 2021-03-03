@@ -73,7 +73,7 @@ class OAuthUserResource(Resource):
     def post(self):
         try:
             user = create_oauth_user(**api.payload)
-            return api.marshal(oauth_user_model, user)
+            return api.marshal(user, oauth_user_model)
         except jwt.DecodeError:
             return {"message": "The token sent was malformed."}, 400
         except (jwt.ExpiredSignatureError, jwt.InvalidTokenError,) as e:
