@@ -63,7 +63,12 @@ edit_model = api.model(
 
 profile_model = base_user_model.clone(
     "User profile model",
-    {"register_date": fields.DateTime(description='The date the user joined bookbnb')},
+    {
+        "register_date": fields.DateTime(
+            description='The date the user joined bookbnb'
+        ),
+        "blocked": fields.Boolean(description="Is blocked?"),
+    },
 )
 api.models[profile_model.name] = profile_model
 
@@ -138,6 +143,27 @@ user_parser.add_argument(
 )
 
 
+def conditional_filter(attr, val):
+    if val == True:  # noqa: E712
+        return attr == False  # noqa: E712
+    else:
+        return 1 == 1
+
+
+user_parser.add_argument(
+    "filter_blocked",
+    type=FilterParam(
+        "filter_blocked",
+        conditional_filter,
+        attribute="blocked",
+        schema=bool,
+        transform={"true": True, "false": False}.get,
+    ),
+    store_missing=True,
+    default="true",
+)
+
+
 @api.route('')
 class UserListResource(Resource):
     @api.doc('list_users_profiles')
@@ -147,10 +173,20 @@ class UserListResource(Resource):
         """Get all users."""
         params = user_parser.parse_args()
 
-        query = User.query.filter(User.blocked == False)  # noqa: E712
-        for _, filter_op in params.items():
+        query = User.query
+
+        for filter_name, filter_op in params.items():
+            if not isinstance(filter_op, FilterParam):
+                if filter_op is None:
+                    continue
+                for i in user_parser.args:
+                    if i.name == filter_name:
+                        filter_op = i.type(filter_op)
+                        break
+
             if not isinstance(filter_op, FilterParam):
                 continue
+
             query = filter_op.apply(query, User)
 
         return query.all()
