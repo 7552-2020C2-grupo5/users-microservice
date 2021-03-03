@@ -5,7 +5,7 @@ from flask_restx import Namespace, Resource, fields
 from users_microservice.constants import BOOKBNB_TOKEN
 from users_microservice.exceptions import ServerTokenError, UnsetServerToken
 
-from .controller import add_end_var, remove_env_var
+from .controller import add_end_var, get_env_vars, remove_env_var
 
 ns = Namespace("Server tokens", description="Register server tokens")
 
@@ -35,6 +35,7 @@ class ServerTokenResource(Resource):
     def delete(self):
         """Remove set server token."""
         try:
+            ns.logger.info(get_env_vars())
             remove_env_var(BOOKBNB_TOKEN)
             return {"message": "success"}, 200
         except UnsetServerToken:
