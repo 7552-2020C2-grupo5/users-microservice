@@ -10,9 +10,7 @@ DEFAULT_GOOGLE_OPENID_CFG_URI = (
     "https://accounts.google.com/.well-known/openid-configuration"
 )
 DEFAULT_GOOGLE_OPENID_CFG_JWKS_KEY = "jwks_uri"
-DEFAULT_AUDIENCE = (
-    "323498260525-irodasbifo350ic2lftmj226ltink5mp.apps.googleusercontent.com"
-)
+DEFAULT_AUDIENCE = "323498260525-irodasbifo350ic2lftmj226ltink5mp.apps.googleusercontent.com,323498260525-ehrvng0r0fn7igkv3gflmchruda28g2s.apps.googleusercontent.com"
 
 DEFAULT_VERIFICATION_URL = (
     "https://tokens-microservice.herokuapp.com/v1/tokens/verification"

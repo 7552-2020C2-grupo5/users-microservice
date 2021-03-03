@@ -13,6 +13,7 @@ from users_microservice.constants import (
 )
 from users_microservice.exceptions import EmailAlreadyRegistered
 from users_microservice.models import User, db
+from users_microservice.utils import split_list
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -39,7 +40,7 @@ def validated_token(token, verify=True):
         token,
         signing_key.key,
         algorithms=["RS256"],
-        audience=config.oauth.audience(default=DEFAULT_AUDIENCE),
+        audience=config.oauth.audience(default=DEFAULT_AUDIENCE, cast=split_list),
         options={"verify_signature": verify},
     )
 
