@@ -27,13 +27,13 @@ def fix_dialect(s):
 def before_request():
     excluded_paths = [
         "/",
-        "/swaggerui/favicon-32x32.png",
-        "/swagger.json",
-        "/swaggerui/swagger-ui-standalone-preset.js",
-        "/swaggerui/swagger-ui-standalone-preset.js",
-        "/swaggerui/swagger-ui-bundle.js",
-        "/swaggerui/swagger-ui.css",
-        "/swaggerui/droid-sans.css",
+        "/v1/swaggerui/favicon-32x32.png",
+        "/v1/swagger.json",
+        "/v1/swaggerui/swagger-ui-standalone-preset.js",
+        "/v1/swaggerui/swagger-ui-standalone-preset.js",
+        "/v1/swaggerui/swagger-ui-bundle.js",
+        "/v1/swaggerui/swagger-ui.css",
+        "/v1/swaggerui/droid-sans.css",
     ]
     if (
         config.env(default="DEV") == "DEV"
@@ -49,7 +49,7 @@ def before_request():
     r = requests.post(
         config.token_verification_url(default=DEFAULT_VERIFICATION_URL),
         json={"token": bookbnb_token},
-        headers={"BookBNBAuthorization": config.bookbnb_token()},
+        headers={"BookBNBAuthorization": config.bookbnb_token("_")},
     )
 
     if not r.ok:
