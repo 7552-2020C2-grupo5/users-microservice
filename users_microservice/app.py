@@ -34,6 +34,7 @@ def before_request():
         "/v1/swaggerui/swagger-ui-bundle.js",
         "/v1/swaggerui/swagger-ui.css",
         "/v1/swaggerui/droid-sans.css",
+        "/v1/admins/login",
     ]
     if (
         config.env(default="DEV") == "DEV"
