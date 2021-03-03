@@ -19,7 +19,3 @@ class BlockedUser(Exception):
 
 class ServerTokenError(Exception):
     pass
-
-
-class UnsetServerToken(Exception):
-    pass

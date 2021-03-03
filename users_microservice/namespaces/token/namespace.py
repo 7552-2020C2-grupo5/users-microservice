@@ -3,7 +3,7 @@
 from flask_restx import Namespace, Resource, fields
 
 from users_microservice.constants import BOOKBNB_TOKEN
-from users_microservice.exceptions import ServerTokenError, UnsetServerToken
+from users_microservice.exceptions import ServerTokenError
 
 from .controller import add_end_var, remove_env_var
 
@@ -29,7 +29,6 @@ class ServerTokenResource(Resource):
             return {"message": f"{e}"}, 500
 
     @ns.response(200, "Server token removed")
-    @ns.response(400, "Error when removing")
     @ns.response(500, "Error processing request")
     @ns.doc('remove_server_token')
     def delete(self):
@@ -37,8 +36,6 @@ class ServerTokenResource(Resource):
         try:
             remove_env_var(BOOKBNB_TOKEN)
             return {"message": "success"}, 200
-        except UnsetServerToken:
-            return {"message": "server token was not set"}, 400
         except ServerTokenError as e:
             ns.logger.error("Error deleting server token", exc_info=e)
             return {"message": "Internal error"}, 500

@@ -6,7 +6,7 @@ import logging
 import requests
 
 from users_microservice.cfg import config
-from users_microservice.exceptions import ServerTokenError, UnsetServerToken
+from users_microservice.exceptions import ServerTokenError
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -43,19 +43,13 @@ def _patch_env_vars(env_vars):
 
 def add_end_var(key, val):
     try:
-        env_vars = get_env_vars()
-        env_vars[key.upper()] = val
-        _patch_env_vars(env_vars)
+        _patch_env_vars({key.upper(): val})
     except Exception as e:
         raise ServerTokenError from e
 
 
 def remove_env_var(key):
     try:
-        env_vars = get_env_vars()
-        env_vars.pop(key.upper())
-        _patch_env_vars(env_vars)
-    except KeyError as e:
-        raise UnsetServerToken from e
+        _patch_env_vars({key.upper(): "_"})
     except Exception as e:
         raise ServerTokenError from e
