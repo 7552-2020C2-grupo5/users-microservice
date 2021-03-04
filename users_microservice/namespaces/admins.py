@@ -180,6 +180,7 @@ class UserTokenValidatorResource(Resource):
         parser_args = auth_parser.parse_args()
         auth_token = parser_args.Authorization
         try:
+            api.logger.info(f"Trying to decode auth token {auth_token}")
             AdminUser.decode_auth_token(auth_token)
             return {"status": "success"}, 200
         except jwt.DecodeError as e:

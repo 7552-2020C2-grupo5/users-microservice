@@ -47,7 +47,15 @@ def before_request():
     ):
         return
 
+    gunicorn_error_logger = logging.getLogger('gunicorn.error')
+    gunicorn_error_logger.setLevel(logging.DEBUG)
+
     bookbnb_token = request.headers.get("BookBNBAuthorization")
+
+    gunicorn_error_logger.info(
+        f"Caught token {bookbnb_token}, validating with tokens service"
+    )
+
     if bookbnb_token is None:
         return {"message": "BookBNB token is missing"}, 401
 
@@ -56,6 +64,8 @@ def before_request():
         json={"token": bookbnb_token},
         headers={"BookBNBAuthorization": config.bookbnb_token(default="_")},
     )
+
+    gunicorn_error_logger.info(f"Response was: {r.json()} and is ok: {r.ok}")
 
     if not r.ok:
         return {"message": "Invalid BookBNB token"}, 401
