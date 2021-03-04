@@ -176,11 +176,18 @@ class UserTokenValidatorResource(Resource):
     @api.response(200, "Success")
     @api.response(401, "Invalid token")
     @api.response(400, "Malformed token")
+    @api.response(404, "Admin does not exist")
     def get(self):
         parser_args = auth_parser.parse_args()
         auth_token = parser_args.Authorization
         try:
-            AdminUser.decode_auth_token(auth_token)
+            role = AdminUser.decode_auth_token_role(auth_token)
+            if role != 'admin':
+                raise jwt.InvalidTokenError("Is not admin")
+            admin_id = AdminUser.decode_auth_token(auth_token)
+            admin = AdminUser.query.filter(AdminUser.id == admin_id).first()
+            if admin is None:
+                return {"message": "Admin does not exist"}, 404
             return {"status": "success"}, 200
         except jwt.DecodeError:
             return {"message": "The token sent was malformed."}, 400

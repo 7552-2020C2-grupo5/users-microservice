@@ -307,10 +307,15 @@ class UserTokenValidatorResource(Resource):
         parser_args = auth_parser.parse_args()
         auth_token = parser_args.Authorization
         try:
+            role = User.decode_auth_token_role(auth_token)
+            if role != 'user':
+                raise jwt.InvalidTokenError("Is not user")
             user_id = User.decode_auth_token(auth_token)
             user = User.query.filter(User.id == user_id).first()
             if user.blocked:
                 raise BlockedUser
+            if user is None:
+                raise UserDoesNotExist
             return {"status": "success"}, 200
         except jwt.DecodeError:
             return {"message": "The token sent was malformed."}, 400

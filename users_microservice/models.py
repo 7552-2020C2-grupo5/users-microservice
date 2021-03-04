@@ -113,6 +113,16 @@ class BaseUser(db.Model):  # type:ignore
             algorithms=[config.jwt_algorithm(default=DEFAULT_JWT_ALGORITHM)],
         )['sub']
 
+    @staticmethod
+    def decode_auth_token_role(auth_token) -> str:
+        if BlacklistToken.check_blacklist(auth_token):
+            raise jwt.InvalidTokenError
+        return jwt.decode(
+            auth_token,
+            key=config.secret_key(default=DEFAULT_SECRET_KEY),
+            algorithms=[config.jwt_algorithm(default=DEFAULT_JWT_ALGORITHM)],
+        )['role']
+
     def update_from_dict(self, **kwargs):
         for field, value in kwargs.items():
             setattr(self, field, value)
@@ -138,6 +148,7 @@ class User(BaseUser):  # type:ignore
             'sub': self.id,
             'wallet_address': self.wallet_address,
             'wallet_mnemonic': self.wallet_mnemonic,
+            'role': 'user',
         }
         return jwt.encode(
             payload, config.secret_key(default=DEFAULT_SECRET_KEY), algorithm='HS256'
@@ -160,10 +171,7 @@ class AdminUser(BaseUser):  # type:ignore
 
     @property
     def jwt(self):
-        payload = {
-            'iat': datetime.datetime.utcnow(),
-            'sub': self.id,
-        }
+        payload = {'iat': datetime.datetime.utcnow(), 'sub': self.id, 'role': 'admin'}
         return jwt.encode(
             payload, config.secret_key(default=DEFAULT_SECRET_KEY), algorithm='HS256'
         )
