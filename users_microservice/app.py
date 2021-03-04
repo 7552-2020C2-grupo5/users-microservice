@@ -26,6 +26,7 @@ def fix_dialect(s):
 
 def before_request():
     excluded_paths = [
+        # swagger
         "/",
         "/swaggerui/favicon-32x32.png",
         "/swagger.json",
@@ -34,6 +35,9 @@ def before_request():
         "/swaggerui/swagger-ui-bundle.js",
         "/swaggerui/swagger-ui.css",
         "/swaggerui/droid-sans.css",
+        # swagger v1
+        "/v1/swagger.json",
+        # login
         "/v1/admins/login",
     ]
     if (
