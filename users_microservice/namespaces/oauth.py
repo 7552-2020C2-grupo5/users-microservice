@@ -93,5 +93,5 @@ class OAuthLogin(Resource):
         try:
             token = oauth_token_parser.parse_args().token
             return api.marshal({"token": oauth_user(token).jwt}, logged_model), 201
-        except:  # noqa: E722 pylint: disable=bare-except
-            return {"message": "Error on OAuth login"}, 401
+        except Exception as e:  # noqa: E722 pylint: disable=bare-except,broad-except
+            return {"message": f"Error on OAuth login: {e}"}, 401
