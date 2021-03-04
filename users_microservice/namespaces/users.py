@@ -283,7 +283,13 @@ class LoginResource(Resource):
     @api.doc('user_login')
     @api.response(201, "Success")
     @api.response(401, "Invalid credentials")
+    @api.response(403, "User is blocked")
     def post(self):
+        user = User.query.filter(User.email == api.payload['email']).first()
+        if not user:
+            return {"message": "User not registered"}, 401
+        if user.blocked:
+            return {"message": "User is blocked"}, 403
         try:
             return (
                 marshal({"token": User.check_password(**api.payload)}, logged_model),
