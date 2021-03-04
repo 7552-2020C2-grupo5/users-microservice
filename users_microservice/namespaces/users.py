@@ -302,11 +302,15 @@ class UserTokenValidatorResource(Resource):
     @api.response(200, "Success")
     @api.response(401, "Invalid token")
     @api.response(400, "Malformed token")
+    @api.response(403, "Blocked user")
     def get(self):
         parser_args = auth_parser.parse_args()
         auth_token = parser_args.Authorization
         try:
-            User.decode_auth_token(auth_token)
+            user_id = User.decode_auth_token(auth_token)
+            user = User.query.filter(User.id == user_id).first()
+            if user.blocked:
+                raise BlockedUser
             return {"status": "success"}, 200
         except jwt.DecodeError:
             return {"message": "The token sent was malformed."}, 400
