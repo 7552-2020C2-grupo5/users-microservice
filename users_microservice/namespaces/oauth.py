@@ -5,6 +5,7 @@ from flask_restx import Namespace, Resource, fields, reqparse
 
 from users_microservice import __version__
 from users_microservice.controllers.oauth import create_oauth_user, oauth_user
+from users_microservice.exceptions import BlockedUser, UserDoesNotExist
 
 api = Namespace("OAuth", description="OAuth login operations",)
 
@@ -89,9 +90,15 @@ class OAuthLogin(Resource):
     @api.expect(oauth_token_parser)
     @api.response(201, "Success")
     @api.response(401, "Invalid token")
+    @api.response(403, "User is blocked")
     def post(self):
+        token = oauth_token_parser.parse_args().token
+        user = oauth_user(token)
+        if user is None:
+            raise UserDoesNotExist
+        if user.blocked:
+            raise BlockedUser
         try:
-            token = oauth_token_parser.parse_args().token
-            return api.marshal({"token": oauth_user(token).jwt}, logged_model), 201
+            return api.marshal({"token": user.jwt}, logged_model), 201
         except Exception as e:  # noqa: E722 pylint: disable=bare-except,broad-except
             return {"message": f"Error on OAuth login: {e}"}, 401

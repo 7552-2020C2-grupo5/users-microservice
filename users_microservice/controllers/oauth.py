@@ -50,7 +50,8 @@ def validated_token(token, verify=True):
 def oauth_user(token):
     """Get user from token."""
     decoded_token = validated_token(token, False)
-    return User.query.filter(User.email == decoded_token["email"]).first()
+    user = User.query.filter(User.email == decoded_token["email"]).first()
+    return user
 
 
 def create_oauth_user(token, wallet_address, wallet_mnemonic):
