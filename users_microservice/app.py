@@ -79,4 +79,10 @@ def create_app(test_db=None):
     # https://github.com/python-restx/flask-restx/issues/230
     CORS(new_app)
     new_app.before_request(before_request)
+    gunicorn_error_logger = logging.getLogger('gunicorn.error')
+    if gunicorn_error_logger is not None:
+        new_app.logger.handlers.extend(  # pylint: disable=no-member
+            gunicorn_error_logger.handlers
+        )
+        new_app.logger.setLevel(logging.DEBUG)  # pylint: disable=no-member
     return new_app
