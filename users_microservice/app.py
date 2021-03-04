@@ -26,18 +26,14 @@ def fix_dialect(s):
 
 def before_request():
     excluded_paths = [
-        # swagger
         "/",
-        "/swaggerui/favicon-32x32.png",
-        "/swagger.json",
-        "/swaggerui/swagger-ui-standalone-preset.js",
-        "/swaggerui/swagger-ui-standalone-preset.js",
-        "/swaggerui/swagger-ui-bundle.js",
-        "/swaggerui/swagger-ui.css",
-        "/swaggerui/droid-sans.css",
-        # swagger v1
+        "/v1/swaggerui/favicon-32x32.png",
         "/v1/swagger.json",
-        # login
+        "/v1/swaggerui/swagger-ui-standalone-preset.js",
+        "/v1/swaggerui/swagger-ui-standalone-preset.js",
+        "/v1/swaggerui/swagger-ui-bundle.js",
+        "/v1/swaggerui/swagger-ui.css",
+        "/v1/swaggerui/droid-sans.css",
         "/v1/admins/login",
     ]
     if (
@@ -47,15 +43,7 @@ def before_request():
     ):
         return
 
-    gunicorn_error_logger = logging.getLogger('gunicorn.error')
-    gunicorn_error_logger.setLevel(logging.DEBUG)
-
     bookbnb_token = request.headers.get("BookBNBAuthorization")
-
-    gunicorn_error_logger.info(
-        f"Caught token {bookbnb_token}, validating with tokens service"
-    )
-
     if bookbnb_token is None:
         return {"message": "BookBNB token is missing"}, 401
 
@@ -64,8 +52,6 @@ def before_request():
         json={"token": bookbnb_token},
         headers={"BookBNBAuthorization": config.bookbnb_token(default="_")},
     )
-
-    gunicorn_error_logger.info(f"Response was: {r.content} and is ok: {r.ok}")
 
     if not r.ok:
         return {"message": "Invalid BookBNB token"}, 401
@@ -89,10 +75,4 @@ def create_app(test_db=None):
     # https://github.com/python-restx/flask-restx/issues/230
     CORS(new_app)
     new_app.before_request(before_request)
-    gunicorn_error_logger = logging.getLogger('gunicorn.error')
-    if gunicorn_error_logger is not None:
-        new_app.logger.handlers.extend(  # pylint: disable=no-member
-            gunicorn_error_logger.handlers
-        )
-        new_app.logger.setLevel(logging.DEBUG)  # pylint: disable=no-member
     return new_app

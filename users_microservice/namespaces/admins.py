@@ -180,14 +180,11 @@ class UserTokenValidatorResource(Resource):
         parser_args = auth_parser.parse_args()
         auth_token = parser_args.Authorization
         try:
-            api.logger.info(f"Trying to decode auth token {auth_token}")
             AdminUser.decode_auth_token(auth_token)
             return {"status": "success"}, 200
-        except jwt.DecodeError as e:
-            api.logger.error("400 error: ", exc_info=e)
+        except jwt.DecodeError:
             return {"message": "The token sent was malformed."}, 400
         except (jwt.ExpiredSignatureError, jwt.InvalidTokenError,) as e:
-            api.logger.error("401 error: ", exc_info=e)
             return {"message": str(e)}, 401
 
 

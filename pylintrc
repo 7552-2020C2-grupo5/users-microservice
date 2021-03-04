@@ -15,7 +15,6 @@ disable =
     fixme,
     lost-exception,
     using-constant-test,
-    logging-fstring-interpolation
 
 [FORMAT]
 
