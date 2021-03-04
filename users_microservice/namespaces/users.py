@@ -249,7 +249,10 @@ class UserResource(Resource):
             raise BlockedUser
         user.blocked = True
         db.session.merge(user)
+        blocked_token = BlacklistToken(token=user.jwt)
+        db.session.add(blocked_token)
         db.session.commit()
+
         return {"message": "The user has been blocked"}, 200
 
 
@@ -319,7 +322,13 @@ class LoginResource(Resource):
     @api.doc('user_login')
     @api.response(201, "Success")
     @api.response(401, "Invalid credentials")
+    @api.response(403, "User is blocked")
     def post(self):
+        user = User.query.filter(User.email == api.payload['email']).first()
+        if user is None:
+            raise UserDoesNotExist
+        if user.blocked:
+            raise BlockedUser
         try:
             return (
                 marshal({"token": User.check_password(**api.payload)}, logged_model),
