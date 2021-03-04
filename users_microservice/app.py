@@ -65,7 +65,7 @@ def before_request():
         headers={"BookBNBAuthorization": config.bookbnb_token(default="_")},
     )
 
-    gunicorn_error_logger.info(f"Response was: {r.json()} and is ok: {r.ok}")
+    gunicorn_error_logger.info(f"Response was: {r.content} and is ok: {r.ok}")
 
     if not r.ok:
         return {"message": "Invalid BookBNB token"}, 401
