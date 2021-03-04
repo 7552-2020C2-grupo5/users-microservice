@@ -1,9 +1,7 @@
 build:
   docker:
-    web: Dockerfile
+    web: heroku-Dockerfile
 release:
   image: web
   command:
     - poetry run python users_microservice/manage.py db upgrade
-run:
-  web: poetry run gunicorn -w 2 --bind 0.0.0.0:$PORT "users_microservice.app:create_app()"

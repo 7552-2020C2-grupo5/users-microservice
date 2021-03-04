@@ -2,13 +2,15 @@
 import logging
 from pathlib import Path
 
-from flask import Flask
+import requests
+from flask import Flask, request
 from flask_cors import CORS
 from flask_migrate import Migrate
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from users_microservice.api import api
 from users_microservice.cfg import config
+from users_microservice.constants import DEFAULT_VERIFICATION_URL
 from users_microservice.models import bcrypt, db
 
 logger = logging.getLogger(__name__)
@@ -20,6 +22,43 @@ def fix_dialect(s):
         s = s.replace("postgres://", "postgresql://")
     s = s.replace("postgresql://", "postgresql+psycopg2://")
     return s
+
+
+def before_request():
+    excluded_paths = [
+        # swagger
+        "/",
+        "/swaggerui/favicon-32x32.png",
+        "/swagger.json",
+        "/swaggerui/swagger-ui-standalone-preset.js",
+        "/swaggerui/swagger-ui-standalone-preset.js",
+        "/swaggerui/swagger-ui-bundle.js",
+        "/swaggerui/swagger-ui.css",
+        "/swaggerui/droid-sans.css",
+        # swagger v1
+        "/v1/swagger.json",
+        # login
+        "/v1/admins/login",
+    ]
+    if (
+        config.env(default="DEV") == "DEV"
+        or request.path in excluded_paths
+        or request.method == "OPTIONS"
+    ):
+        return
+
+    bookbnb_token = request.headers.get("BookBNBAuthorization")
+    if bookbnb_token is None:
+        return {"message": "BookBNB token is missing"}, 401
+
+    r = requests.post(
+        config.token_verification_url(default=DEFAULT_VERIFICATION_URL),
+        json={"token": bookbnb_token},
+        headers={"BookBNBAuthorization": config.bookbnb_token(default="_")},
+    )
+
+    if not r.ok:
+        return {"message": "Invalid BookBNB token"}, 401
 
 
 def create_app(test_db=None):
@@ -39,4 +78,5 @@ def create_app(test_db=None):
     )  # remove after flask-restx > 0.2.0 is released
     # https://github.com/python-restx/flask-restx/issues/230
     CORS(new_app)
+    new_app.before_request(before_request)
     return new_app

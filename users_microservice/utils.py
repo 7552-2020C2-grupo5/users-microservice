@@ -7,6 +7,10 @@ def generate_random_password(length):
     return ''.join(random.choice(s) for i in range(length))
 
 
+def split_list(s):
+    return s.split(",")
+
+
 class FilterParam:
     """Filter a query based on an op and param"""
 

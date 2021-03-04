@@ -11,7 +11,11 @@ from sqlalchemy.sql import func
 from sqlalchemy_utils.types.email import EmailType
 
 from users_microservice.cfg import config
-from users_microservice.constants import DEFAULT_JWT_EXPIRATION, DEFAULT_SECRET_KEY
+from users_microservice.constants import (
+    DEFAULT_JWT_ALGORITHM,
+    DEFAULT_JWT_EXPIRATION,
+    DEFAULT_SECRET_KEY,
+)
 from users_microservice.exceptions import (
     BlockedUser,
     EmailAlreadyRegistered,
@@ -78,8 +82,10 @@ class BaseUser(db.Model):  # type:ignore
             'sub': self.id,
         }
         return jwt.encode(
-            payload, config.secret_key(default=DEFAULT_SECRET_KEY), algorithm='HS256'
-        ).decode()
+            payload,
+            config.secret_key(default=DEFAULT_SECRET_KEY),
+            algorithm=config.jwt_algorithm(default=DEFAULT_JWT_ALGORITHM),
+        )
 
     @staticmethod
     def decode_auth_token(auth_token) -> int:
@@ -101,9 +107,11 @@ class BaseUser(db.Model):  # type:ignore
         """
         if BlacklistToken.check_blacklist(auth_token):
             raise jwt.InvalidTokenError
-        return jwt.decode(auth_token, config.secret_key(default=DEFAULT_SECRET_KEY))[
-            'sub'
-        ]
+        return jwt.decode(
+            auth_token,
+            key=config.secret_key(default=DEFAULT_SECRET_KEY),
+            algorithms=[config.jwt_algorithm(default=DEFAULT_JWT_ALGORITHM)],
+        )['sub']
 
     def update_from_dict(self, **kwargs):
         for field, value in kwargs.items():
@@ -133,7 +141,7 @@ class User(BaseUser):  # type:ignore
         }
         return jwt.encode(
             payload, config.secret_key(default=DEFAULT_SECRET_KEY), algorithm='HS256'
-        ).decode()
+        )
 
     @classmethod
     def check_password(cls, email, password):
@@ -158,7 +166,7 @@ class AdminUser(BaseUser):  # type:ignore
         }
         return jwt.encode(
             payload, config.secret_key(default=DEFAULT_SECRET_KEY), algorithm='HS256'
-        ).decode()
+        )
 
 
 class BlacklistToken(db.Model):  # type:ignore

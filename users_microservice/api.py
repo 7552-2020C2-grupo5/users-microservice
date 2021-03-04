@@ -4,6 +4,9 @@ from flask_restx import Api
 
 from users_microservice import __version__
 from users_microservice.namespaces.admins import api as admins_namespace
+from users_microservice.namespaces.metrics import api as metrics_namespace
+from users_microservice.namespaces.oauth import api as oauth_namespace
+from users_microservice.namespaces.token import api as token_namespace
 from users_microservice.namespaces.users import api as users_namespace
 
 api = Api(
@@ -17,6 +20,9 @@ api = Api(
 )
 api.add_namespace(users_namespace, path='/users')
 api.add_namespace(admins_namespace, path='/admins')
+api.add_namespace(metrics_namespace, path='/metrics')
+api.add_namespace(oauth_namespace, path='/oauth')
+api.add_namespace(token_namespace, path='/token')
 
 
 @api.errorhandler

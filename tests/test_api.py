@@ -91,11 +91,29 @@ def test_create_admin_invalid_email(client, invalid_email_admin):
     assert response._status_code == 400
 
 
+def test_create_admin_invalid_email_2(client):
+    response = client.post(
+        "/v1/admins",
+        json={
+            "first_name": "prueba",
+            "last_name": "prueba",
+            "email": "a@a.com",
+            "password": "1234",
+        },
+    )
+    assert response._status_code == 400
+
+
 def test_login_root_admin(client):
-    print(client.get("/v1/admins").data)
     admin_login = {"email": "admin@bookbnb.com", "password": "admin_bookbnb"}
     response = client.post("/v1/admins/login", json=admin_login)
     assert response._status_code == 201
+
+
+def test_login_root_admin_bad_password(client):
+    admin_login = {"email": "admin@bookbnb.com", "password": "admin_bookbnb_asdflkj"}
+    response = client.post("/v1/admins/login", json=admin_login)
+    assert response._status_code == 401
 
 
 def test_login_admin(client, admin):
@@ -104,6 +122,19 @@ def test_login_admin(client, admin):
     admin_login = {"email": admin["email"], "password": admin["password"]}
     response = client.post("/v1/admins/login", json=admin_login)
     assert response._status_code == 201
+
+
+def test_login(client, user):
+    response = client.post("/v1/users", json=user)
+    assert response._status_code == 201
+    response = client.post(
+        "/v1/users/login",
+        json={"email": user.get("email"), "password": user.get("password")},
+    )
+    assert response._status_code == 201
+    token = json.loads(response.data).get("token")
+    response = client.get("/v1/users/validate_token", headers={"Authorization": token})
+    assert response._status_code == 200
 
 
 def test_block_user(client, user):
@@ -239,3 +270,15 @@ def test_filter_user_last_name_not_exists(client, user, user2):
     assert filtered._status_code == 200
     filtered_data = json.loads(filtered.data)
     assert len(filtered_data) == 0
+
+
+def test_bad_oauth_user_creation(client):
+    response = client.post(
+        "/v1/oauth/user",
+        json={
+            "token": "sasasdaadsads",
+            "wallet_address": "string",
+            "wallet_mnemonic": "string",
+        },
+    )
+    assert response._status_code == 400
