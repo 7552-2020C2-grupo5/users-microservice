@@ -1,5 +1,5 @@
 # users-microservice
-![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/7552-2020C2-grupo5/users-microservice?style=flat-square) ![Coverage](coverage-badge.svg)
+![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/7552-2020C2-grupo5/users-microservice?style=flat-square) ![Coverage](coverage-badge.svg)[![Tests](https://github.com/7552-2020C2-grupo5/users-microservice/actions/workflows/tests.yml/badge.svg)](https://github.com/7552-2020C2-grupo5/users-microservice/actions/workflows/tests.yml)[![Linters](https://github.com/7552-2020C2-grupo5/users-microservice/actions/workflows/linters.yml/badge.svg)](https://github.com/7552-2020C2-grupo5/users-microservice/actions/workflows/linters.yml)[![Bandit](https://github.com/7552-2020C2-grupo5/users-microservice/actions/workflows/bandit.yml/badge.svg)](https://github.com/7552-2020C2-grupo5/users-microservice/actions/workflows/bandit.yml)
 
 Users microservice for BookBNB.
 
